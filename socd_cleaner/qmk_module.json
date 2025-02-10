@@ -1,4 +1,15 @@
 {
     "module_name": "SOCD Cleaner",
-    "maintainer": "tzarc"
+    "maintainer": "tzarc",
+    "keycodes": [
+        {
+            "key": "SOCDON"
+        },
+        {
+            "key": "SOCDOFF"
+        },
+        {
+            "key": "SOCDTOG"
+        }
+    ]
 }

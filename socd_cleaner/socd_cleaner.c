@@ -98,5 +98,24 @@ bool process_record_socd_cleaner(uint16_t keycode, keyrecord_t *record) {
             return false;
         }
     }
+
+    switch(keycode) {
+        case SOCDON:
+            if (record->event.pressed) {
+                socd_cleaner_enabled = true;
+            }
+            return false;
+        case SOCDOFF:
+            if (record->event.pressed) {
+                socd_cleaner_enabled = false;
+            }
+            return false;
+        case SOCDTOG:
+            if (record->event.pressed) {
+                socd_cleaner_enabled = !socd_cleaner_enabled;
+            }
+            return false;
+    }
+
     return true;
 }
