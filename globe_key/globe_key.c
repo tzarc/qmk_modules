@@ -10,7 +10,7 @@ bool process_record_globe_key(uint16_t keycode, keyrecord_t *record) {
             } else {
                 host_consumer_send(0);
             }
-            break;
+            return false;
     }
-    return false;
+    return true;
 }
