@@ -81,6 +81,8 @@ static bool process_socd_cleaner(uint16_t keycode, keyrecord_t* record,
   return true;  // Continue default handling to press/release current key.
 }
 
+ASSERT_COMMUNITY_MODULES_MIN_API_VERSION(1, 0, 0);
+
 /** Introspection declarations */
 uint16_t socd_count_raw(void);
 uint16_t socd_count(void);
