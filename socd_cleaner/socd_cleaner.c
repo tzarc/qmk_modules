@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// clang-format off
 /**
  * @file socd_cleaner.c
  * @brief SOCD Cleaner implementation
@@ -80,28 +81,29 @@ static bool process_socd_cleaner(uint16_t keycode, keyrecord_t* record,
   }
   return true;  // Continue default handling to press/release current key.
 }
+// clang-format on
 
 ASSERT_COMMUNITY_MODULES_MIN_API_VERSION(1, 0, 0);
 
 /** Introspection declarations */
-uint16_t socd_count_raw(void);
-uint16_t socd_count(void);
+uint16_t        socd_count_raw(void);
+uint16_t        socd_count(void);
 socd_cleaner_t* socd_get_raw(uint16_t socd_idx);
 socd_cleaner_t* socd_get(uint16_t socd_idx);
 
-bool process_record_socd_cleaner(uint16_t keycode, keyrecord_t *record) {
-    if(!process_record_socd_cleaner_kb(keycode, record)) {
+bool process_record_socd_cleaner(uint16_t keycode, keyrecord_t* record) {
+    if (!process_record_socd_cleaner_kb(keycode, record)) {
         return false;
     }
 
-    for(int i = 0; i < socd_count(); ++i) {
+    for (int i = 0; i < socd_count(); ++i) {
         socd_cleaner_t* state = socd_get(i);
         if (!process_socd_cleaner(keycode, record, state)) {
             return false;
         }
     }
 
-    switch(keycode) {
+    switch (keycode) {
         case SOCDON:
             if (record->event.pressed) {
                 socd_cleaner_enabled = true;
