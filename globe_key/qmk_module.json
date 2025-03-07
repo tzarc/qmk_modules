@@ -4,9 +4,7 @@
     "keycodes": [
         {
             "key": "KC_GLOBE",
-            "aliases": [
-                "KC_GLB"
-            ]
+            "aliases": ["KC_GLB"]
         }
     ]
 }
