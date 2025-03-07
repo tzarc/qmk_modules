@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// clang-format off
 /**
  * @file socd_cleaner.h
  * @brief SOCD Cleaner - enhance WASD for fast inputs for gaming
@@ -129,3 +130,4 @@ extern bool socd_cleaner_enabled;
 #ifdef __cplusplus
 }
 #endif
+// clang-format on

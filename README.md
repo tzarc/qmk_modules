@@ -16,3 +16,4 @@ Each child directory is a separate module, and has instructions on how to add it
 |---------------------------------|-------------------------------------------------------------------|
 | [Globe Key](./globe_key/)       | Adds a cut-down version of the macOS Globe Key to your build.     |
 | [SOCD Cleaner](./socd_cleaner/) | Adds support for @getreuer's SOCD Cleaner, as a community module. |
+| [Konami Code](./konami_code/)   | Adds a handler for the Konami Code.                               |
