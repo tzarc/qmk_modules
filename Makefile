@@ -12,7 +12,7 @@ format:
 		$(ECHO) -e "\e[38;5;14mFormatting: $$file\e[0m" ; \
 		clang-format -i "$$file" ; \
 	done
-	@git ls-files | grep -E 'key(board|map)\.json' | while read file ; do \
+	@git ls-files | grep -E '(qmk_module|keyboard|keymap)\.json' | while read file ; do \
 		$(ECHO) -e "\e[38;5;14mFormatting: $$file\e[0m" ; \
 		qmk format-json -i "$$file" ; \
 	done
