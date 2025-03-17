@@ -22,7 +22,10 @@ bool process_record_konami_code(uint16_t keycode, keyrecord_t *record) {
             case QK_MOD_TAP ... QK_MOD_TAP_MAX:
                 return process_record_konami_code(QK_MOD_TAP_GET_TAP_KEYCODE(keycode), record);
             case QK_LAYER_TAP ... QK_LAYER_TAP_MAX:
-                return process_record_konami_code(QK_LAYER_TAP_GET_TAP_KEYCODE(keycode), record);
+                if (record->tap.count) {
+                    return process_record_konami_code(QK_LAYER_TAP_GET_TAP_KEYCODE(keycode), record);
+                }
+                break;
             case QK_SWAP_HANDS ... QK_SWAP_HANDS_MAX:
                 return process_record_konami_code(QK_SWAP_HANDS_GET_TAP_KEYCODE(keycode), record);
             case KC_KP_ENTER:
