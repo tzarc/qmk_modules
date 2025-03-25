@@ -9,6 +9,7 @@
 #include "action_layer.h"
 #include "keymap_introspection.h"
 #include "community_modules.h"
+#include "printf.h"
 
 // TODO:
 // - Validate macros bounds checking
@@ -41,10 +42,12 @@ static void set_keymap_dirty(uint8_t layer, uint8_t row, uint8_t col, bool val) 
 
 void nvm_dynamic_keymap_erase(void) {
     fs_rmdir("layers", true);
+    fs_mkdir("layers");
 }
 
 void nvm_dynamic_keymap_macro_erase(void) {
     fs_rmdir("macros", true);
+    fs_mkdir("macros");
 }
 
 uint16_t nvm_dynamic_keymap_read_keycode(uint8_t layer, uint8_t row, uint8_t column) {
@@ -67,6 +70,7 @@ void nvm_dynamic_keymap_save(void) {
             char filename[16] = {0};
             snprintf(filename, sizeof(filename), "layers/key%02d", i);
             fs_update_block(filename, dynamic_keymap_layer_cache[i], sizeof(dynamic_keymap_layer_cache[i]));
+            dynamic_keymap_dirty_layers &= ~(1 << i);
         }
     }
 }
@@ -127,6 +131,7 @@ void nvm_dynamic_encodermap_save(void) {
             char filename[16] = {0};
             snprintf(filename, sizeof(filename), "layers/enc%02d", i);
             fs_update_block(filename, dynamic_encodermap_layer_cache[i], sizeof(dynamic_encodermap_layer_cache[i]));
+            dynamic_encodermap_dirty_layers &= ~(1 << i);
         }
     }
 }

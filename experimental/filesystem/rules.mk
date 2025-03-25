@@ -26,13 +26,16 @@ ifneq ($(strip $(FILESYSTEM_DRIVER)),)
             OPT_DEFS += -DLFS_NO_MALLOC -DLFS_THREADSAFE -DLFS_NAME_MAX=40 -DLFS_NO_ASSERT
         endif
 
-        ifeq ($(strip $(DYNAMIC_KEYMAP_ENABLE)),yes)
+        ifeq ($(strip $(XAP_ENABLE)),yes)
             SRC += \
                 nvm_dynamic_keymap.c
         else ifeq ($(strip $(VIA_ENABLE)),yes)
             SRC += \
                 nvm_dynamic_keymap.c \
                 nvm_via.c
+        else ifeq ($(strip $(DYNAMIC_KEYMAP_ENABLE)),yes)
+            SRC += \
+                nvm_dynamic_keymap.c
         endif
     endif
 
