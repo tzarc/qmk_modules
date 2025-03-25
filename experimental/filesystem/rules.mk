@@ -9,12 +9,12 @@ ifneq ($(strip $(FILESYSTEM_DRIVER)),)
     else
         OPT_DEFS += -DFILESYSTEM_ENABLE
         COMMON_VPATH += \
-            $(CURRENT_MODULE_PATH)/filesystem
+            $(MODULE_PATH_FILESYSTEM)/filesystem
 
         ifeq ($(strip $(FILESYSTEM_DRIVER)),lfs_spi_flash)
             COMMON_VPATH += \
-                $(CURRENT_MODULE_PATH)/nvm \
-                $(CURRENT_MODULE_PATH)/littlefs
+                $(MODULE_PATH_FILESYSTEM)/nvm \
+                $(MODULE_PATH_FILESYSTEM)/littlefs
             NVM_DRIVER := custom
             FLASH_DRIVER = spi
             SPI_DRIVER_REQUIRED = yes
