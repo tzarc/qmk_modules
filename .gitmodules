@@ -1,0 +1,4 @@
+[submodule "experimental/filesystem/littlefs"]
+	path = experimental/filesystem/littlefs
+	url = https://github.com/littlefs-project/littlefs.git
+	branch = master
