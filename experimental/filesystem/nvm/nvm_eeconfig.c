@@ -94,6 +94,7 @@ static const char EECONFIG_KEYMAP[]        = "ee/keymap";
 static const char EECONFIG_KEYBOARD[]      = "ee/keyboard";
 static const char EECONFIG_USER[]          = "ee/user";
 static const char EECONFIG_HANDEDNESS[]    = "ee/handedness";
+static const char EECONFIG_KEYMAP_HASH[]   = "ee/keymap_hash";
 
 bool nvm_eeconfig_is_enabled(void) {
     return fs_read_u16(EECONFIG_MAGIC) == EECONFIG_MAGIC_NUMBER;
@@ -236,6 +237,13 @@ bool nvm_eeconfig_read_handedness(void) {
 }
 void nvm_eeconfig_update_handedness(bool val) {
     fs_update_u8(EECONFIG_HANDEDNESS, !!val);
+}
+
+uint32_t nvm_eeconfig_read_keymap_hash(void) {
+    return fs_read_u32(EECONFIG_KEYMAP_HASH);
+}
+void nvm_eeconfig_update_keymap_hash(uint32_t val) {
+    fs_update_u32(EECONFIG_KEYMAP_HASH, val);
 }
 
 #if (EECONFIG_KB_DATA_SIZE) > 0
