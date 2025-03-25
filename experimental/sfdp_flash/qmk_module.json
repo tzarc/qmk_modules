@@ -1,0 +1,9 @@
+{
+    "module_name": "SFDP Flash Driver",
+    "maintainer": "tzarc",
+    "keycodes": [
+        {
+            "key": "KC_SFDP"
+        }
+    ]
+}
