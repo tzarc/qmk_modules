@@ -1,4 +1,9 @@
 {
     "module_name": "Filesystem Testing",
-    "maintainer": "tzarc"
+    "maintainer": "tzarc",
+    "keycodes": [
+        {
+            "key": "FS_DUMP"
+        }
+    ]
 }
