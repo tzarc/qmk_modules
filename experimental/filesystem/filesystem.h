@@ -63,9 +63,9 @@ void        fs_close(fs_fd_t fd);
             dprintf("%s: ", __func__); \
             dprintf(__VA_ARGS__);      \
         } while (0)
-#    define fs_hexdump(name, file, buf, length)              \
+#    define fs_hexdump(name, file, buf, length)        \
         do {                                           \
-            dprintf("[%s (%s)]: ", name, file);                   \
+            dprintf("[%s (%s)]: ", name, file);        \
             const uint8_t *p = (const uint8_t *)(buf); \
             for (int i = 0; i < (length); ++i) {       \
                 dprintf(" %02X", (int)p[i]);           \

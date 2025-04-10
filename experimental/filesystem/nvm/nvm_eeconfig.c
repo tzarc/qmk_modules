@@ -136,63 +136,49 @@ void nvm_eeconfig_update_debug(const debug_config_t *debug_config) {
 }
 
 layer_state_t nvm_eeconfig_read_default_layer(void) {
-#if defined(LAYER_STATE_8BIT)
-    return fs_read_u8(EECONFIG_DEFAULT_LAYER);
-#elif defined(LAYER_STATE_16BIT)
-    return fs_read_u16(EECONFIG_DEFAULT_LAYER);
-#elif defined(LAYER_STATE_32BIT)
-    return fs_read_u32(EECONFIG_DEFAULT_LAYER);
-#else
-#    error "Layer state size not defined"
-#endif
+    layer_state_t layer_state = 0;
+    fs_read_block(EECONFIG_DEFAULT_LAYER, &layer_state, sizeof(layer_state_t));
+    return layer_state;
 }
 
 void nvm_eeconfig_update_default_layer(layer_state_t val) {
-#if defined(LAYER_STATE_8BIT)
-    fs_update_u8(EECONFIG_DEFAULT_LAYER, val);
-#elif defined(LAYER_STATE_16BIT)
-    fs_update_u16(EECONFIG_DEFAULT_LAYER, val);
-#elif defined(LAYER_STATE_32BIT)
-    fs_update_u32(EECONFIG_DEFAULT_LAYER, val);
-#else
-#    error "Layer state size not defined"
-#endif
+    fs_update_block(EECONFIG_DEFAULT_LAYER, &val, sizeof(layer_state_t));
 }
 
 void nvm_eeconfig_read_keymap(keymap_config_t *keymap_config) {
-    keymap_config->raw = fs_read_u16(EECONFIG_KEYMAP);
+    fs_read_block(EECONFIG_KEYMAP, keymap_config, sizeof(keymap_config_t));
 }
 void nvm_eeconfig_update_keymap(const keymap_config_t *keymap_config) {
-    fs_update_u16(EECONFIG_KEYMAP, keymap_config->raw);
+    fs_update_block(EECONFIG_KEYMAP, keymap_config, sizeof(keymap_config_t));
 }
 
 #ifdef AUDIO_ENABLE
 static const char EECONFIG_AUDIO[] = "ee/audio";
 void              nvm_eeconfig_read_audio(audio_config_t *audio_config) {
-    audio_config->raw = fs_read_u8(EECONFIG_AUDIO);
+    fs_read_block(EECONFIG_AUDIO, audio_config, sizeof(audio_config_t));
 }
 void nvm_eeconfig_update_audio(const audio_config_t *audio_config) {
-    fs_update_u8(EECONFIG_AUDIO, audio_config->raw);
+    fs_update_block(EECONFIG_AUDIO, audio_config, sizeof(audio_config_t));
 }
 #endif // AUDIO_ENABLE
 
 #ifdef UNICODE_COMMON_ENABLE
 static const char EECONFIG_UNICODEMODE[] = "ee/unicodemode";
 void              nvm_eeconfig_read_unicode_mode(unicode_config_t *unicode_config) {
-    unicode_config->raw = fs_read_u8(EECONFIG_UNICODEMODE);
+    fs_read_block(EECONFIG_UNICODEMODE, unicode_config, sizeof(unicode_config_t));
 }
 void nvm_eeconfig_update_unicode_mode(const unicode_config_t *unicode_config) {
-    fs_update_u8(EECONFIG_UNICODEMODE, unicode_config->raw);
+    fs_update_block(EECONFIG_UNICODEMODE, unicode_config, sizeof(unicode_config_t));
 }
 #endif // UNICODE_COMMON_ENABLE
 
 #ifdef BACKLIGHT_ENABLE
 static const char EECONFIG_BACKLIGHT[] = "ee/backlight";
 void              nvm_eeconfig_read_backlight(backlight_config_t *backlight_config) {
-    backlight_config->raw = fs_read_u8(EECONFIG_BACKLIGHT);
+    fs_read_block(EECONFIG_BACKLIGHT, backlight_config, sizeof(backlight_config_t));
 }
 void nvm_eeconfig_update_backlight(const backlight_config_t *backlight_config) {
-    fs_update_u8(EECONFIG_BACKLIGHT, backlight_config->raw);
+    fs_update_block(EECONFIG_BACKLIGHT, backlight_config, sizeof(backlight_config_t));
 }
 #endif // BACKLIGHT_ENABLE
 
@@ -257,10 +243,10 @@ void nvm_eeconfig_update_user(uint32_t val) {
 #ifdef HAPTIC_ENABLE
 static const char EECONFIG_HAPTIC[] = "ee/haptic";
 void              nvm_eeconfig_read_haptic(haptic_config_t *haptic_config) {
-    haptic_config->raw = fs_read_u32(EECONFIG_HAPTIC);
+    fs_read_block(EECONFIG_HAPTIC, haptic_config, sizeof(haptic_config_t));
 }
 void nvm_eeconfig_update_haptic(const haptic_config_t *haptic_config) {
-    fs_update_u32(EECONFIG_HAPTIC, haptic_config->raw);
+    fs_update_block(EECONFIG_HAPTIC, haptic_config, sizeof(haptic_config_t));
 }
 #endif // HAPTIC_ENABLE
 
