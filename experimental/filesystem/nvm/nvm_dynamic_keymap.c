@@ -40,9 +40,13 @@ static void set_keymap_dirty(uint8_t layer, uint8_t row, uint8_t col, bool val) 
     }
 }
 
+static void nvm_dynamic_keymap_reset_cache_layer_to_raw(uint8_t layer);
+static void nvm_dynamic_keymap_reset_cache_to_raw(void);
+
 void nvm_dynamic_keymap_erase(void) {
     fs_rmdir("layers", true);
     fs_mkdir("layers");
+    nvm_dynamic_keymap_reset_cache_to_raw();
 }
 
 void nvm_dynamic_keymap_macro_erase(void) {
@@ -71,7 +75,7 @@ void nvm_dynamic_keymap_save(void) {
     // TODO: Implement a more efficient way to save only the dirty keycodes, as littlefs prefers appending data instead of writing the whole thing
     for (int i = 0; i < (sizeof(layer_state_t) * 8); ++i) {
         if (dynamic_keymap_dirty_layers & (1 << i)) {
-            char filename[16] = {0};
+            char filename[18] = {0};
             snprintf(filename, sizeof(filename), "layers/key%02d", i);
             fs_update_block(filename, dynamic_keymap_layer_cache[i], sizeof(dynamic_keymap_layer_cache[i]));
             dynamic_keymap_dirty_layers &= ~(1 << i);
@@ -80,11 +84,12 @@ void nvm_dynamic_keymap_save(void) {
 }
 
 void nvm_dynamic_keymap_load(void) {
+    static const size_t layer_size = (sizeof(uint16_t) * MATRIX_ROWS * MATRIX_COLS);
     for (int i = 0; i < (sizeof(layer_state_t) * 8); ++i) {
-        char filename[16] = {0};
+        char filename[18] = {0};
         snprintf(filename, sizeof(filename), "layers/key%02d", i);
-        if (fs_exists(filename)) {
-            fs_read_block(filename, dynamic_keymap_layer_cache[i], sizeof(dynamic_keymap_layer_cache[i]));
+        if (!fs_exists(filename) || fs_read_block(filename, dynamic_keymap_layer_cache[i], layer_size) != layer_size) {
+            nvm_dynamic_keymap_reset_cache_layer_to_raw(i);
         }
     }
 }
@@ -253,6 +258,31 @@ void nvm_dynamic_keymap_macro_load(void) {
             break;
         }
         ++n;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+static void nvm_dynamic_keymap_reset_cache_layer_to_raw(uint8_t layer) {
+    for (int j = 0; j < MATRIX_ROWS; ++j) {
+        for (int k = 0; k < MATRIX_COLS; ++k) {
+            dynamic_keymap_layer_cache[layer][j][k] = keycode_at_keymap_location_raw(layer, j, k);
+        }
+    }
+
+#if defined(ENCODER_ENABLE) && defined(ENCODER_MAP_ENABLE)
+    for (int j = 0; j < NUM_ENCODERS; ++j) {
+        for (int k = 0; k < NUM_DIRECTIONS; ++k) {
+            dynamic_encodermap_layer_cache[layer][j][k] = keycode_at_encodermap_location_raw(layer, j, k);
+        }
+    }
+#endif // defined(ENCODER_ENABLE) && defined(ENCODER_MAP_ENABLE)
+}
+
+static void nvm_dynamic_keymap_reset_cache_to_raw(void) {
+    for (int i = 0; i < keymap_layer_count(); ++i) {
+        nvm_dynamic_keymap_reset_cache_layer_to_raw(i);
     }
 }
 

@@ -3,5 +3,5 @@
 
 #include <stdlib.h>
 
-void fs_read_block(const char *filename, void *data, size_t size);
-void fs_update_block(const char *filename, const void *data, size_t size);
+size_t fs_read_block(const char *filename, void *data, size_t size);
+void   fs_update_block(const char *filename, const void *data, size_t size);

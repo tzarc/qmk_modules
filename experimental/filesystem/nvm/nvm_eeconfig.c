@@ -47,19 +47,23 @@ void nvm_eeconfig_erase(void) {
 // - Subsequent writes are (header+data) appended -- header contains (offset+length)
 // - Once a threahold is reached, rewrite the entire file with the live copy of data instead of playing back the log
 
-void fs_read_block(const char *filename, void *data, size_t size) {
+size_t fs_read_block(const char *filename, void *data, size_t size) {
     fs_fd_t fd = fs_open(filename, FS_READ);
     if (fd == INVALID_FILESYSTEM_FD) {
         fs_dprintf("could not open file\n");
         memset(data, 0, size);
-        return;
+        return 0;
     }
-    if (fs_read(fd, data, size) != size) {
+    size_t read_bytes;
+    if ((read_bytes = fs_read(fd, data, size)) != size) {
         fs_dprintf("did not read correct number of bytes\n");
         memset(data, 0, size);
+        fs_close(fd);
+        return read_bytes;
     }
     fs_close(fd);
     fs_hexdump("read", filename, data, size);
+    return size;
 }
 
 void fs_update_block(const char *filename, const void *data, size_t size) {
