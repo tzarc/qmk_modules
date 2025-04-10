@@ -50,37 +50,52 @@ void nvm_eeconfig_erase(void) {
 void fs_read_block(const char *filename, void *data, size_t size) {
     fs_fd_t fd = fs_open(filename, FS_READ);
     if (fd == INVALID_FILESYSTEM_FD) {
+        fs_dprintf("could not open file\n");
         memset(data, 0, size);
         return;
     }
     if (fs_read(fd, data, size) != size) {
+        fs_dprintf("did not read correct number of bytes\n");
         memset(data, 0, size);
     }
     fs_close(fd);
+    fs_hexdump("read", filename, data, size);
 }
 
 void fs_update_block(const char *filename, const void *data, size_t size) {
+    fs_hexdump("save", filename, data, size);
     uint8_t buffer[size];
     fs_read_block(filename, buffer, size);
     if (memcmp(buffer, data, size) == 0) {
+        fs_dprintf("no change, skipping write\n");
         return;
     }
     fs_fd_t fd = fs_open(filename, FS_WRITE | FS_TRUNCATE);
     if (fd == INVALID_FILESYSTEM_FD) {
+        fs_dprintf("could not open file\n");
         return;
     }
-    fs_write(fd, data, size);
+    if (fs_write(fd, data, size) != size) {
+        fs_dprintf("did not write correct number of bytes\n");
+    }
     fs_close(fd);
+
+#if defined(FILESYSTEM_DEBUG)
+    fs_read_block(filename, buffer, size);
+    if (memcmp(buffer, data, size) != 0) {
+        fs_dprintf("readback mismatch!\n");
+    }
+#endif // FILESYSTEM_DEBUG
 }
 
 #define FS_RW_TYPED(type, suffix)                                     \
     static type fs_read_##suffix(const char *filename) {              \
         type data;                                                    \
-        fs_read_block(filename, &data, sizeof(data));                 \
+        fs_read_block(filename, &data, sizeof(type));                 \
         return data;                                                  \
     }                                                                 \
     static void fs_update_##suffix(const char *filename, type data) { \
-        fs_update_block(filename, &data, sizeof(data));               \
+        fs_update_block(filename, &data, sizeof(type));               \
     }
 
 FS_RW_TYPED(uint32_t, u32)
@@ -120,11 +135,28 @@ void nvm_eeconfig_update_debug(const debug_config_t *debug_config) {
     fs_update_u8(EECONFIG_DEBUG, debug_config->raw);
 }
 
-uint8_t nvm_eeconfig_read_default_layer(void) {
+layer_state_t nvm_eeconfig_read_default_layer(void) {
+#if defined(LAYER_STATE_8BIT)
     return fs_read_u8(EECONFIG_DEFAULT_LAYER);
+#elif defined(LAYER_STATE_16BIT)
+    return fs_read_u16(EECONFIG_DEFAULT_LAYER);
+#elif defined(LAYER_STATE_32BIT)
+    return fs_read_u32(EECONFIG_DEFAULT_LAYER);
+#else
+#    error "Layer state size not defined"
+#endif
 }
-void nvm_eeconfig_update_default_layer(uint8_t val) {
+
+void nvm_eeconfig_update_default_layer(layer_state_t val) {
+#if defined(LAYER_STATE_8BIT)
     fs_update_u8(EECONFIG_DEFAULT_LAYER, val);
+#elif defined(LAYER_STATE_16BIT)
+    fs_update_u16(EECONFIG_DEFAULT_LAYER, val);
+#elif defined(LAYER_STATE_32BIT)
+    fs_update_u32(EECONFIG_DEFAULT_LAYER, val);
+#else
+#    error "Layer state size not defined"
+#endif
 }
 
 void nvm_eeconfig_read_keymap(keymap_config_t *keymap_config) {
@@ -177,30 +209,30 @@ void nvm_eeconfig_update_steno_mode(uint8_t val) {
 #ifdef RGB_MATRIX_ENABLE
 static const char EECONFIG_RGB_MATRIX[] = "ee/rgb_matrix";
 void              nvm_eeconfig_read_rgb_matrix(rgb_config_t *rgb_matrix_config) {
-    fs_read_block(EECONFIG_RGB_MATRIX, &rgb_matrix_config, sizeof(rgb_config_t));
+    fs_read_block(EECONFIG_RGB_MATRIX, rgb_matrix_config, sizeof(rgb_config_t));
 }
 void nvm_eeconfig_update_rgb_matrix(const rgb_config_t *rgb_matrix_config) {
-    fs_update_block(EECONFIG_RGB_MATRIX, &rgb_matrix_config, sizeof(rgb_config_t));
+    fs_update_block(EECONFIG_RGB_MATRIX, rgb_matrix_config, sizeof(rgb_config_t));
 }
 #endif // RGB_MATRIX_ENABLE
 
 #ifdef LED_MATRIX_ENABLE
 static const char EECONFIG_LED_MATRIX[] = "ee/led_matrix";
 void              nvm_eeconfig_read_led_matrix(led_eeconfig_t *led_matrix_config) {
-    fs_read_block(EECONFIG_LED_MATRIX, &led_matrix_config, sizeof(led_eeconfig_t));
+    fs_read_block(EECONFIG_LED_MATRIX, led_matrix_config, sizeof(led_eeconfig_t));
 }
 void nvm_eeconfig_update_led_matrix(const led_eeconfig_t *led_matrix_config) {
-    fs_update_block(EECONFIG_LED_MATRIX, &led_matrix_config, sizeof(led_eeconfig_t));
+    fs_update_block(EECONFIG_LED_MATRIX, led_matrix_config, sizeof(led_eeconfig_t));
 }
 #endif // LED_MATRIX_ENABLE
 
 #ifdef RGBLIGHT_ENABLE
 static const char EECONFIG_RGBLIGHT[] = "ee/rgblight";
 void              nvm_eeconfig_read_rgblight(rgblight_config_t *rgblight_config) {
-    fs_read_block(EECONFIG_RGBLIGHT, &rgblight_config, sizeof(rgblight_config_t));
+    fs_read_block(EECONFIG_RGBLIGHT, rgblight_config, sizeof(rgblight_config_t));
 }
 void nvm_eeconfig_update_rgblight(const rgblight_config_t *rgblight_config) {
-    fs_update_block(EECONFIG_RGBLIGHT, &rgblight_config, sizeof(rgblight_config_t));
+    fs_update_block(EECONFIG_RGBLIGHT, rgblight_config, sizeof(rgblight_config_t));
 }
 #endif // RGBLIGHT_ENABLE
 
