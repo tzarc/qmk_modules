@@ -50,6 +50,10 @@ void nvm_dynamic_keymap_macro_erase(void) {
     fs_mkdir("macros");
 }
 
+uint8_t keymap_layer_count(void) {
+    return DYNAMIC_KEYMAP_LAYER_COUNT;
+}
+
 uint16_t nvm_dynamic_keymap_read_keycode(uint8_t layer, uint8_t row, uint8_t column) {
     if (layer >= keymap_layer_count() || row >= MATRIX_ROWS || column >= MATRIX_COLS) return KC_NO;
     return dynamic_keymap_layer_cache[layer][row][column];
@@ -213,7 +217,7 @@ void nvm_dynamic_keymap_macro_save(void) {
                 macro_end++;
             }
             if (macro_end - macro_start > 0) {
-                char filename[16] = {0};
+                char filename[18] = {0};
                 snprintf(filename, sizeof(filename), "macros/%02d", n);
                 fs_update_block(filename, macro_start, macro_end - macro_start);
             }
@@ -230,7 +234,7 @@ void nvm_dynamic_keymap_macro_load(void) {
     char  *ptr       = dynamic_macro_buffer;
     size_t max_count = sizeof(dynamic_macro_buffer);
     while (true) {
-        char filename[16] = {0};
+        char filename[18] = {0};
         snprintf(filename, sizeof(filename), "macros/%02d", n);
         if (fs_exists(filename)) {
             fs_fd_t fd = fs_open(filename, FS_READ);
