@@ -19,6 +19,8 @@ ifneq ($(strip $(FILESYSTEM_DRIVER)),)
                 $(MODULE_PATH_FILESYSTEM)/nvm \
                 $(MODULE_PATH_FILESYSTEM)/littlefs
             NVM_DRIVER := custom
+            EEPROM_DRIVER := none
+            WEAR_LEVELING_DRIVER := none
             FLASH_DRIVER = spi
             SPI_DRIVER_REQUIRED = yes
             SRC += \

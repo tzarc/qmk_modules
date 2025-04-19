@@ -14,29 +14,48 @@
 // TODO:
 // - Validate macros bounds checking
 // - Make layer count fully dynamic, disregard DYNAMIC_KEYMAP_LAYER_COUNT
-// - More efficient layer write updates -- changing one key should not require a write of the full layer
 
-static layer_state_t dynamic_keymap_dirty_layers;
-static uint32_t      dynamic_keymap_dirty_cache[DYNAMIC_KEYMAP_LAYER_COUNT][((MATRIX_ROWS) * (MATRIX_COLS)) / 32];
-static uint16_t      dynamic_keymap_layer_cache[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_COLS];
+// Keep track of how many keys have been altered per layer
+static uint16_t dynamic_keymap_altered_count[DYNAMIC_KEYMAP_LAYER_COUNT] = {0};
+// Keep track of the altered keys by bitmask
+static uint32_t dynamic_keymap_altered_keys[DYNAMIC_KEYMAP_LAYER_COUNT][(((MATRIX_ROWS) * (MATRIX_COLS)) + 31) / 32];
+// The "live" copy of the keymap, cached in RAM
+static uint16_t dynamic_keymap_layer_cache[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_COLS];
 
-static __attribute__((used)) bool is_keymap_dirty(uint8_t layer, uint8_t row, uint8_t col) {
-    // Assume layer/row/col already bounds-checked by caller
-    if (!(dynamic_keymap_dirty_layers & (1 << layer))) {
-        return false;
-    }
+// Scratch area to hold the to-be-written keycode data, either as a full keymap or as a list of keycode overrides, whichever is smaller
+static struct __attribute__((packed)) {
+    uint8_t write_mode; // 0 == full keymap, 1 == overrides
+    union {
+        uint16_t keycodes[MATRIX_ROWS][MATRIX_COLS];
+        struct {
+            uint8_t  row;
+            uint8_t  col;
+            uint16_t keycode;
+        } overrides[(((((MATRIX_ROWS) + 1) / 2) * 2) * (((MATRIX_COLS + 1) / 2) * 2)) / (sizeof(uint32_t) / sizeof(uint16_t))];
+    };
+} dynamic_keymap_scratch;
+
+static bool is_key_altered(uint8_t layer, uint8_t row, uint8_t col) {
     size_t index = (row * (MATRIX_COLS)) + col;
-    return (dynamic_keymap_dirty_cache[layer][index / 32] & (1 << (index % 32))) != 0;
+    return (dynamic_keymap_altered_keys[layer][index / 32] & (1 << (index % 32))) != 0;
 }
 
-static void set_keymap_dirty(uint8_t layer, uint8_t row, uint8_t col, bool val) {
+static void set_key_altered(uint8_t layer, uint8_t row, uint8_t col, bool val) {
     // Assume layer/row/col already bounds-checked by caller
     size_t index = (row * (MATRIX_COLS)) + col;
+
+    // Update the altered key count for the layer if we've had a change
+    bool orig_val = dynamic_keymap_altered_keys[layer][index / 32] & (1 << (index % 32)) ? true : false;
+    if (val != orig_val) {
+        dynamic_keymap_altered_count[layer] += val ? 1 : -1;
+    }
+
     if (val) {
-        dynamic_keymap_dirty_cache[layer][index / 32] |= (1 << (index % 32));
-        dynamic_keymap_dirty_layers |= (1 << layer);
+        // Mark the key index as altered
+        dynamic_keymap_altered_keys[layer][index / 32] |= (1 << (index % 32));
     } else {
-        dynamic_keymap_dirty_cache[layer][index / 32] &= ~(1 << (index % 32));
+        // Unmark the key index from being altered
+        dynamic_keymap_altered_keys[layer][index / 32] &= ~(1 << (index % 32));
     }
 }
 
@@ -65,58 +84,95 @@ uint16_t nvm_dynamic_keymap_read_keycode(uint8_t layer, uint8_t row, uint8_t col
 
 void nvm_dynamic_keymap_update_keycode(uint8_t layer, uint8_t row, uint8_t column, uint16_t keycode) {
     if (layer >= keymap_layer_count() || row >= MATRIX_ROWS || column >= MATRIX_COLS) return;
-    if (dynamic_keymap_layer_cache[layer][row][column] != keycode) {
-        dynamic_keymap_layer_cache[layer][row][column] = keycode;
-        set_keymap_dirty(layer, row, column, true);
-    }
+    dynamic_keymap_layer_cache[layer][row][column] = keycode;
+    set_key_altered(layer, row, column, keycode == keycode_at_keymap_location_raw(layer, row, column));
 }
 
 void nvm_dynamic_keymap_save(void) {
-    // TODO: Implement a more efficient way to save only the dirty keycodes, as littlefs prefers appending data instead of writing the whole thing
-    for (int i = 0; i < (sizeof(layer_state_t) * 8); ++i) {
-        if (dynamic_keymap_dirty_layers & (1 << i)) {
-            char filename[18] = {0};
-            snprintf(filename, sizeof(filename), "layers/key%02d", i);
-            fs_update_block(filename, dynamic_keymap_layer_cache[i], sizeof(dynamic_keymap_layer_cache[i]));
-            dynamic_keymap_dirty_layers &= ~(1 << i);
+    // TODO: Implement a more efficient way to save only the altered keycodes, as littlefs prefers appending data instead of writing the whole thing
+    for (int layer = 0; layer < (sizeof(layer_state_t) * 8); ++layer) {
+        char filename[18] = {0};
+        snprintf(filename, sizeof(filename), "layers/key%02d", layer);
+        if (dynamic_keymap_altered_count[layer] == 0) {
+            // If nothing has been altered, delete any existing file as we'll just use the raw keymap for this layer
+            fs_delete(filename);
+        } else {
+            if (sizeof(dynamic_keymap_scratch.keycodes) <= (sizeof(dynamic_keymap_scratch.overrides[0]) * dynamic_keymap_altered_count[layer])) {
+                // write the entire layer to filesystem
+                dynamic_keymap_scratch.write_mode = 0;
+                memcpy(dynamic_keymap_scratch.keycodes, dynamic_keymap_layer_cache[layer], sizeof(dynamic_keymap_scratch.keycodes));
+                fs_update_block(filename, &dynamic_keymap_scratch, sizeof(uint8_t) + sizeof(dynamic_keymap_scratch.keycodes));
+            } else {
+                // write the overrides to filesystem
+                dynamic_keymap_scratch.write_mode = 1;
+                size_t idx                        = 0;
+                for (int row = 0; row < MATRIX_ROWS; ++row) {
+                    for (int col = 0; col < MATRIX_COLS; ++col) {
+                        if (is_key_altered(layer, row, col)) {
+                            dynamic_keymap_scratch.overrides[idx].row     = row;
+                            dynamic_keymap_scratch.overrides[idx].col     = col;
+                            dynamic_keymap_scratch.overrides[idx].keycode = dynamic_keymap_layer_cache[layer][row][col];
+                            ++idx;
+                        }
+                    }
+                }
+                fs_update_block(filename, &dynamic_keymap_scratch, sizeof(uint8_t) + (sizeof(dynamic_keymap_scratch.overrides[0]) * dynamic_keymap_altered_count[layer]));
+            }
         }
     }
 }
 
 void nvm_dynamic_keymap_load(void) {
-    static const size_t layer_size = (sizeof(uint16_t) * MATRIX_ROWS * MATRIX_COLS);
-    for (int i = 0; i < (sizeof(layer_state_t) * 8); ++i) {
+    for (int layer = 0; layer < (sizeof(layer_state_t) * 8); ++layer) {
         char filename[18] = {0};
-        snprintf(filename, sizeof(filename), "layers/key%02d", i);
-        if (!fs_exists(filename) || fs_read_block(filename, dynamic_keymap_layer_cache[i], layer_size) != layer_size) {
-            nvm_dynamic_keymap_reset_cache_layer_to_raw(i);
+        snprintf(filename, sizeof(filename), "layers/key%02d", layer);
+        nvm_dynamic_keymap_reset_cache_layer_to_raw(layer);
+        if (!fs_exists(filename)) {
+            continue;
+        }
+        fs_read_block(filename, &dynamic_keymap_scratch, sizeof(dynamic_keymap_scratch));
+        if (dynamic_keymap_scratch.write_mode == 0) {
+            // full keymap
+            for (int row = 0; row < MATRIX_ROWS; ++row) {
+                for (int col = 0; col < MATRIX_COLS; ++col) {
+                    nvm_dynamic_keymap_update_keycode(layer, row, col, dynamic_keymap_scratch.keycodes[row][col]);
+                }
+            }
+        } else {
+            // overrides
+            for (int j = 0; j < dynamic_keymap_altered_count[layer]; ++j) {
+                uint8_t  row     = dynamic_keymap_scratch.overrides[j].row;
+                uint8_t  column  = dynamic_keymap_scratch.overrides[j].col;
+                uint16_t keycode = dynamic_keymap_scratch.overrides[j].keycode;
+                nvm_dynamic_keymap_update_keycode(layer, row, column, keycode);
+            }
         }
     }
 }
 
 #if defined(ENCODER_ENABLE) && defined(ENCODER_MAP_ENABLE)
 #    include "encoder.h"
-static layer_state_t dynamic_encodermap_dirty_layers;
-static uint32_t      dynamic_encodermap_dirty_cache[DYNAMIC_KEYMAP_LAYER_COUNT][(NUM_ENCODERS) * (NUM_DIRECTIONS) / 32];
+static layer_state_t dynamic_encodermap_altered_layers;
+static uint32_t      dynamic_encodermap_altered_cache[DYNAMIC_KEYMAP_LAYER_COUNT][(NUM_ENCODERS) * (NUM_DIRECTIONS) / 32];
 static uint16_t      dynamic_encodermap_layer_cache[DYNAMIC_KEYMAP_LAYER_COUNT][NUM_ENCODERS][NUM_DIRECTIONS];
 
-static __attribute__((used)) bool is_encodermap_dirty(uint8_t layer, uint8_t encoder_idx, bool clockwise) {
+static __attribute__((used)) bool is_encodermap_altered(uint8_t layer, uint8_t encoder_idx, bool clockwise) {
     // Assume layer/encoder_idx already bounds-checked by caller
-    if (!(dynamic_encodermap_dirty_layers & (1 << layer))) {
+    if (!(dynamic_encodermap_altered_layers & (1 << layer))) {
         return false;
     }
     size_t index = (encoder_idx * (NUM_DIRECTIONS)) + (clockwise ? 0 : 1);
-    return (dynamic_encodermap_dirty_cache[layer][index / 32] & (1 << (index % 32))) != 0;
+    return (dynamic_encodermap_altered_cache[layer][index / 32] & (1 << (index % 32))) != 0;
 }
 
-static void set_encodermap_dirty(uint8_t layer, uint8_t encoder_idx, bool clockwise, bool val) {
+static void set_encodermap_altered(uint8_t layer, uint8_t encoder_idx, bool clockwise, bool val) {
     // Assume layer/encoder_idx already bounds-checked by caller
     size_t index = (encoder_idx * (NUM_DIRECTIONS)) + (clockwise ? 0 : 1);
     if (val) {
-        dynamic_encodermap_dirty_cache[layer][index / 32] |= (1 << (index % 32));
-        dynamic_encodermap_dirty_layers |= (1 << layer);
+        dynamic_encodermap_altered_cache[layer][index / 32] |= (1 << (index % 32));
+        dynamic_encodermap_altered_layers |= (1 << layer);
     } else {
-        dynamic_encodermap_dirty_cache[layer][index / 32] &= ~(1 << (index % 32));
+        dynamic_encodermap_altered_cache[layer][index / 32] &= ~(1 << (index % 32));
     }
 }
 
@@ -129,18 +185,18 @@ void nvm_dynamic_keymap_update_encoder(uint8_t layer, uint8_t encoder_id, bool c
     if (layer >= encodermap_layer_count() || encoder_id >= NUM_ENCODERS) return;
     if (dynamic_encodermap_layer_cache[layer][encoder_id][clockwise ? 0 : 1] != keycode) {
         dynamic_encodermap_layer_cache[layer][encoder_id][clockwise ? 0 : 1] = keycode;
-        set_encodermap_dirty(layer, encoder_id, clockwise, true);
+        set_encodermap_altered(layer, encoder_id, clockwise, true);
     }
 }
 
 void nvm_dynamic_encodermap_save(void) {
-    // TODO: Implement a more efficient way to save only the dirty keycodes, as littlefs prefers appending data instead of writing the whole thing
+    // TODO: Implement a more efficient way to save only the altered keycodes, as littlefs prefers appending data instead of writing the whole thing
     for (int i = 0; i < (sizeof(layer_state_t) * 8); ++i) {
-        if (dynamic_encodermap_dirty_layers & (1 << i)) {
+        if (dynamic_encodermap_altered_layers & (1 << i)) {
             char filename[16] = {0};
             snprintf(filename, sizeof(filename), "layers/enc%02d", i);
             fs_update_block(filename, dynamic_encodermap_layer_cache[i], sizeof(dynamic_encodermap_layer_cache[i]));
-            dynamic_encodermap_dirty_layers &= ~(1 << i);
+            dynamic_encodermap_altered_layers &= ~(1 << i);
         }
     }
 }
@@ -181,7 +237,7 @@ void nvm_dynamic_keymap_update_buffer(uint32_t offset, uint32_t size, uint8_t *d
     }
 }
 
-bool dynamic_macro_dirty        = false;
+bool dynamic_macro_altered      = false;
 char dynamic_macro_buffer[1024] = {0};
 
 uint32_t nvm_dynamic_keymap_macro_size(void) {
@@ -201,18 +257,18 @@ void nvm_dynamic_keymap_macro_update_buffer(uint32_t offset, uint32_t size, uint
     }
     if (memcmp(dynamic_macro_buffer + offset, data, size) != 0) {
         memcpy(dynamic_macro_buffer + offset, data, size);
-        dynamic_macro_dirty = true;
+        dynamic_macro_altered = true;
     }
 }
 
 void nvm_dynamic_keymap_macro_reset(void) {
     nvm_dynamic_keymap_macro_erase();
     memset(dynamic_macro_buffer, 0, sizeof(dynamic_macro_buffer));
-    dynamic_macro_dirty = false;
+    dynamic_macro_altered = false;
 }
 
 void nvm_dynamic_keymap_macro_save(void) {
-    if (dynamic_macro_dirty) {
+    if (dynamic_macro_altered) {
         int   n           = 0;
         char *terminator  = dynamic_macro_buffer + sizeof(dynamic_macro_buffer);
         char *macro_start = dynamic_macro_buffer;
@@ -229,7 +285,7 @@ void nvm_dynamic_keymap_macro_save(void) {
             ++n;
             macro_start = macro_end + 1;
         }
-        dynamic_macro_dirty = false;
+        dynamic_macro_altered = false;
     }
 }
 
@@ -270,6 +326,8 @@ static void nvm_dynamic_keymap_reset_cache_layer_to_raw(uint8_t layer) {
             dynamic_keymap_layer_cache[layer][j][k] = keycode_at_keymap_location_raw(layer, j, k);
         }
     }
+    dynamic_keymap_altered_count[layer] = 0;
+    memset(dynamic_keymap_altered_keys[layer], 0, sizeof(dynamic_keymap_altered_keys[layer]));
 
 #if defined(ENCODER_ENABLE) && defined(ENCODER_MAP_ENABLE)
     for (int j = 0; j < NUM_ENCODERS; ++j) {
