@@ -15,6 +15,8 @@
 // - Validate macros bounds checking
 // - Make layer count fully dynamic, disregard DYNAMIC_KEYMAP_LAYER_COUNT
 
+// Keep track of if anything is actually dirty
+static layer_state_t dynamic_keymap_layer_dirty = 0;
 // Keep track of how many keys have been altered per layer
 static uint16_t dynamic_keymap_altered_count[DYNAMIC_KEYMAP_LAYER_COUNT] = {0};
 // Keep track of the altered keys by bitmask
@@ -85,12 +87,22 @@ uint16_t nvm_dynamic_keymap_read_keycode(uint8_t layer, uint8_t row, uint8_t col
 void nvm_dynamic_keymap_update_keycode(uint8_t layer, uint8_t row, uint8_t column, uint16_t keycode) {
     if (layer >= keymap_layer_count() || row >= MATRIX_ROWS || column >= MATRIX_COLS) return;
     dynamic_keymap_layer_cache[layer][row][column] = keycode;
-    set_key_altered(layer, row, column, keycode == keycode_at_keymap_location_raw(layer, row, column));
+    set_key_altered(layer, row, column, keycode != keycode_at_keymap_location_raw(layer, row, column));
+    dynamic_keymap_layer_dirty |= (1 << layer);
 }
 
 void nvm_dynamic_keymap_save(void) {
+    // Skip saving if nothing has changed
+    if (!dynamic_keymap_layer_dirty) {
+        return;
+    }
+
     // TODO: Implement a more efficient way to save only the altered keycodes, as littlefs prefers appending data instead of writing the whole thing
     for (int layer = 0; layer < (sizeof(layer_state_t) * 8); ++layer) {
+        // Skip layers that haven't been modified
+        if (!(dynamic_keymap_layer_dirty & (1 << layer))) {
+            continue;
+        }
         char filename[18] = {0};
         snprintf(filename, sizeof(filename), "layers/key%02d", layer);
         if (dynamic_keymap_altered_count[layer] == 0) {
@@ -120,6 +132,8 @@ void nvm_dynamic_keymap_save(void) {
             }
         }
     }
+
+    dynamic_keymap_layer_dirty = 0;
 }
 
 void nvm_dynamic_keymap_load(void) {
