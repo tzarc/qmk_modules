@@ -141,10 +141,14 @@ void nvm_dynamic_keymap_load(void) {
         char filename[18] = {0};
         snprintf(filename, sizeof(filename), "layers/key%02d", layer);
         nvm_dynamic_keymap_reset_cache_layer_to_raw(layer);
-        if (!fs_exists(filename)) {
+        fs_fd_t fd = fs_open(filename, FS_READ);
+        if (fd == INVALID_FILESYSTEM_FD) {
+            fs_dprintf("could not open file\n");
             continue;
         }
-        fs_read_block(filename, &dynamic_keymap_scratch, sizeof(dynamic_keymap_scratch));
+        size_t bytes_read = fs_read(fd, &dynamic_keymap_scratch, sizeof(dynamic_keymap_scratch));
+        fs_close(fd);
+        fs_hexdump("read", filename, &dynamic_keymap_scratch, bytes_read);
         if (dynamic_keymap_scratch.write_mode == 0) {
             // full keymap
             for (int row = 0; row < MATRIX_ROWS; ++row) {
@@ -154,7 +158,9 @@ void nvm_dynamic_keymap_load(void) {
             }
         } else {
             // overrides
-            for (int j = 0; j < dynamic_keymap_altered_count[layer]; ++j) {
+            int count = (bytes_read - sizeof(uint8_t)) / sizeof(dynamic_keymap_scratch.overrides[0]);
+            fs_dprintf("overrides count: %d\n", count);
+            for (int j = 0; j < count; ++j) {
                 uint8_t  row     = dynamic_keymap_scratch.overrides[j].row;
                 uint8_t  column  = dynamic_keymap_scratch.overrides[j].col;
                 uint16_t keycode = dynamic_keymap_scratch.overrides[j].keycode;
