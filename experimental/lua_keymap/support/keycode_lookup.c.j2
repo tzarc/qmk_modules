@@ -1,0 +1,140 @@
+// Copyright 2025 Nick Brassel (@tzarc)
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+
+#if __has_include("progmem.h")
+#include "progmem.h"
+#else
+#define PSTR(x) x
+#define PROGMEM
+#define memcmp_P(p1, p2, n) memcmp(p1, p2, n)
+#endif
+
+#ifndef memcmp_P
+#define memcmp_P(p1, p2, n) memcmp(p1, p2, n)
+#endif
+
+#ifdef KEYCODE_TESTS
+#include <stdio.h>
+#define RAW_KEYCODE_ARRAY
+#endif
+
+#ifdef RAW_KEYCODE_ARRAY
+struct raw_keycode_t {
+    uint16_t value;
+    const char *name;
+};
+
+static const struct raw_keycode_t raw_keycodes[] = {
+    {%- for value, name in all_keycodes %}
+    { 0x{{ "%04X" % value }}, PSTR("{{ name }}") },
+    {%- endfor %}
+};
+#endif // RAW_KEYCODE_ARRAY
+
+struct  __attribute__((packed)) keycode_offset_t {
+    uint16_t value;
+    uint16_t name_offset;
+};
+
+static const struct PROGMEM keycode_offset_t keycode_offsets[{{ all_keycodes | length }}] = {
+    {%- for name_offset, value in keycode_offsets %}
+    { 0x{{ "%04X" % value }}, 0x{{ "%04X" % name_offset }} },
+    {%- endfor %}
+};
+
+static const char PROGMEM keycode_name_array[{{ keycode_name_bytes | length }}] = {
+    {% for b in keycode_name_bytes -%}
+    0x{{ "%02X" % (b | int) }},
+    {%- if loop.index % 32 == 0 %}
+    {% endif -%}
+    {% endfor %}
+};
+
+_Static_assert((sizeof(keycode_offsets) + sizeof(keycode_name_array)) == {{ (keycode_offset_bytes | length) + (keycode_name_bytes | length) }}, "keycode_offsets and keycode_name_array size mismatch");
+
+// Keycode count: {{ all_keycodes | length }}
+// Keycode offset byte count: {{ keycode_offset_bytes | length }}
+// Keycode name byte count: {{ keycode_name_bytes | length }}
+
+uint16_t lookup_keycode_by_name(const char *name, int *iteration_count) {
+    int iterations = 0;
+    // Binary search the keycode offsets, using the offsets to find the keycode name.
+    // This is a simple implementation, and could be optimized further.
+    size_t input_len = strlen(name);
+    size_t begin = 0;
+    size_t end = sizeof(keycode_offsets) / sizeof(struct keycode_offset_t) - 1;
+    size_t low = begin;
+    size_t high = end;
+    while (low <= high) {
+        iterations++;
+        size_t mid = (low + high) / 2;
+        const struct keycode_offset_t *entry = &keycode_offsets[mid];
+        const struct keycode_offset_t *next_entry = (mid + 1 < end) ? &keycode_offsets[mid + 1] : NULL;
+        size_t string_len = next_entry ? next_entry->name_offset - entry->name_offset : sizeof(keycode_name_array) - entry->name_offset;
+        const char *entry_name = (const char *)keycode_name_array + entry->name_offset;
+
+        int cmp = memcmp_P(name, entry_name, string_len);
+        if (cmp == 0 && input_len == string_len) {
+            if (iteration_count) {
+                *iteration_count = iterations;
+            }
+            return entry->value;
+        } else if (cmp < 0) {
+            high = mid - 1;
+        } else {
+            low = mid + 1;
+        }
+    }
+    if (iteration_count) {
+        *iteration_count = iterations;
+    }
+    return 0; // Not found
+}
+
+#ifdef KEYCODE_TESTS
+int main() {
+    int iterations;
+    int rc = 0;
+    // Iterate through `raw_keycodes`, checking that each entry matches the lookup function.
+    for (size_t i = 0; i < sizeof(raw_keycodes) / sizeof(struct raw_keycode_t); i++) {
+        const struct raw_keycode_t *entry = &raw_keycodes[i];
+        const char *name = entry->name;
+        uint16_t value = entry->value;
+        uint16_t lookup_value = lookup_keycode_by_name(name, &iterations);
+        if (lookup_value != value) {
+            printf("Mismatch: %s -> was 0x%04X, expected 0x%04X (%d iterations)\n", name, lookup_value, value, iterations);
+            rc = 1;
+        } else {
+            printf("Match: %s -> 0x%04X (%d iterations)\n", name, value, iterations);
+        }
+    }
+    if (rc == 0) {
+        printf("All keycodes matched successfully.\n");
+    } else {
+        printf("Some keycodes did not match.\n");
+    }
+
+    // Check nonexistent drops out
+    uint16_t lookup_value = lookup_keycode_by_name("DOES_NOT_EXIST", &iterations);
+    if (lookup_value != 0) {
+        printf("Expected 0 for non-existent keycode, got 0x%04X (%d iterations)\n", lookup_value, iterations);
+        rc = 1;
+    } else {
+        printf("Non-existent keycode lookup returned 0 as expected (%d iterations)\n", iterations);
+    }
+
+    // Check substrings don't match
+    lookup_value = lookup_keycode_by_name("UG_SAT", &iterations);
+    if (lookup_value != 0) {
+        printf("Expected 0 for substring keycode, got 0x%04X (%d iterations)\n", lookup_value, iterations);
+        rc = 1;
+    } else {
+        printf("Substring keycode lookup returned 0 as expected (%d iterations)\n", iterations);
+    }
+
+    return rc;
+}
+#endif // KEYCODE_TESTS

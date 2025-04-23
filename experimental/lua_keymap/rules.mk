@@ -33,3 +33,4 @@ SRC += \
     lutf8lib.c \
     linit.c
 
+SRC += test_lua.c
