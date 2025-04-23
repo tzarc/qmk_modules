@@ -33,4 +33,7 @@ SRC += \
     lutf8lib.c \
     linit.c
 
+# Prevent linker collisions with pico-sdk
+$(INTERMEDIATE_OUTPUT)/lauxlib.o: FILE_SPECIFIC_CFLAGS += -Dpanic=lua_panic_func
+
 SRC += test_lua.c
