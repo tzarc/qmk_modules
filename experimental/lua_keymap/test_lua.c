@@ -8,22 +8,24 @@
 lua_State *L = 0;
 
 void luaL_openlibs_custom(lua_State *L) {
+    // clang-format off
     static const luaL_Reg loadedlibs[] = {
-        {LUA_GNAME, luaopen_base}, {LUA_COLIBNAME, luaopen_coroutine}, {LUA_TABLIBNAME, luaopen_table}, {LUA_STRLIBNAME, luaopen_string}, {LUA_MATHLIBNAME, luaopen_math}, {LUA_UTF8LIBNAME, luaopen_utf8}, {NULL, NULL},
+        {LUA_GNAME, luaopen_base},
+        {LUA_COLIBNAME, luaopen_coroutine},
+        {LUA_TABLIBNAME, luaopen_table},
+        {LUA_STRLIBNAME, luaopen_string},
+        {LUA_MATHLIBNAME, luaopen_math},
+        {LUA_UTF8LIBNAME, luaopen_utf8},
+        {NULL, NULL},
     };
+    // clang-format on
+
     const luaL_Reg *lib;
     /* "require" functions from 'loadedlibs' and set results to global table */
     for (lib = loadedlibs; lib->func; lib++) {
         luaL_requiref(L, lib->name, lib->func, 1);
         lua_pop(L, 1); /* remove lib */
     }
-}
-
-static int dprint_wrapper(lua_State *L) {
-    const char *arg = luaL_checkstring(L, 1); // first arg is what we want to print
-    (void)arg;
-    printf("%s\n", arg);
-    return 0;
 }
 
 #include "keycode_lookup.c"
@@ -45,24 +47,9 @@ static int keycode_lookup_indexer(lua_State *L) {
 
     const char *name = luaL_checkstring(L, 2); // second arg is what we want to print
 
-    // Special case for KC_NO, keycode lookup returns `0` when not found
-    if (strcmp(name, "KC_NO") == 0) {
-        printf("keycode_lookup_indexer: %s -> 0x%04X\n", name, 0);
-
-#ifdef KEYCODE_LOOKUP_MEMOISE
-        // Memoise the value in the table
-        lua_pushinteger(L, 0);
-        lua_rawset(L, 1);
-#endif // KEYCODE_LOOKUP_MEMOISE
-
-        // Return the value
-        lua_pushinteger(L, 0);
-        return 1;
-    }
-
     int      iterations = 0;
     uint16_t value      = lookup_keycode_by_name(name, &iterations);
-    if (value == 0) {
+    if (value == 0 && strcmp(name, "KC_NO") != 0) {
         lua_pushnil(L);
         return 1;
     }
@@ -101,14 +88,10 @@ void test_lua(void) {
         lua_getmetatable(L, -1);                       // get the metatable
         lua_pushcfunction(L, &keycode_lookup_indexer); // push the keycode_lookup function
         lua_setfield(L, -2, "__index");                // set the __index field to the keycode_lookup_indexer function
-        lua_pop(L, 1);                                 // pop the metatable
-        lua_pop(L, 1);                                 // pop the global table
+        lua_pop(L, 2);                                 // pop the metatable, global table
     }
 
-    lua_pushcfunction(L, &dprint_wrapper);
-    lua_setglobal(L, "dprint");
-
-    const char *code = "print(string.format('UG_VALU = 0x%04X', UG_VALU))\nprint(string.format('UG_VALU = 0x%04X', UG_VALU))";
+    const char *code = "print(string.format('UG_VALU = 0x%04X', UG_VALU))\nprint(string.format('KC_NO = 0x%04X', KC_NO))\nprint(string.format('UG_VALU = 0x%04X', UG_VALU))";
     if (luaL_loadstring(L, code) == LUA_OK) {
         if (lua_pcall(L, 0, 1, 0) == LUA_OK) {
             lua_pop(L, lua_gettop(L));
