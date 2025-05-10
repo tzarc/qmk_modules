@@ -57,14 +57,14 @@ for value_txt, tbl in keycode_data["keycodes"].items():
         for alias in tbl["aliases"]:
             all_keycodes.add((value_num, alias))
 
-keycode_name_bytes = bytes()
+keycode_name_bytes = b''
 keycode_offsets = []
 for value, name in sorted(all_keycodes, key=lambda x: x[1]):
     new_offset = len(keycode_name_bytes)
     keycode_offsets.append((new_offset, value))
     keycode_name_bytes += name.encode("utf-8")
 
-keycode_offset_bytes = bytes()
+keycode_offset_bytes = b''
 for offset, value in keycode_offsets:
     keycode_offset_bytes += struct.pack(">H", offset)
     keycode_offset_bytes += struct.pack(">H", value)

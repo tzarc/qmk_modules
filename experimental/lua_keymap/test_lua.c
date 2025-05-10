@@ -28,6 +28,21 @@ void luaL_openlibs_custom(lua_State *L) {
     }
 }
 
+static int nil_returner(lua_State *L) {
+    lua_pushnil(L);
+    return 1;
+}
+
+static int true_returner(lua_State *L) {
+    lua_pushboolean(L, true);
+    return 1;
+}
+
+static int false_returner(lua_State *L) {
+    lua_pushboolean(L, false);
+    return 1;
+}
+
 #include "keycode_lookup.c"
 static int keycode_lookup_indexer(lua_State *L) {
     int n = lua_gettop(L); // number of arguments
@@ -49,21 +64,22 @@ static int keycode_lookup_indexer(lua_State *L) {
 
     int      iterations = 0;
     uint16_t value      = lookup_keycode_by_name(name, &iterations);
-    if (value == 0 && strcmp(name, "KC_NO") != 0) {
-        lua_pushnil(L);
+    if (value != 0 || strcmp(name, "KC_NO") == 0) {
+        printf("keycode_lookup_indexer: %s -> 0x%04X (%d iterations)\n", name, value, iterations);
+
+#ifdef KEYCODE_LOOKUP_MEMOISE
+        // Memoise the value in the table
+        lua_pushinteger(L, value);
+        lua_rawset(L, 1);
+#endif // KEYCODE_LOOKUP_MEMOISE
+
+        // Return the value
+        lua_pushinteger(L, value);
         return 1;
     }
 
-    printf("keycode_lookup_indexer: %s -> 0x%04X (%d iterations)\n", name, value, iterations);
-
-#ifdef KEYCODE_LOOKUP_MEMOISE
-    // Memoise the value in the table
-    lua_pushinteger(L, value);
-    lua_rawset(L, 1);
-#endif // KEYCODE_LOOKUP_MEMOISE
-
-    // Return the value
-    lua_pushinteger(L, value);
+    // Nothing found, return nil
+    lua_pushnil(L);
     return 1;
 }
 
