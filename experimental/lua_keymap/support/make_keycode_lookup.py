@@ -2,7 +2,6 @@
 # Copyright 2025 Nick Brassel (@tzarc)
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import json
 import os
 import subprocess
 import sys
@@ -12,7 +11,9 @@ from milc.questions import yesno
 
 qmk_firmware_path = os.environ.get("QMK_FIRMWARE_DIR", None)
 if qmk_firmware_path is None:
-    raise FileNotFoundError("QMK_FIRMWARE_DIR environment variable not set. Please set it to the path of your QMK firmware directory.")
+    raise FileNotFoundError(
+        "QMK_FIRMWARE_DIR environment variable not set. Please set it to the path of your QMK firmware directory."
+    )
 qmk_firmware_path = Path(qmk_firmware_path)
 qmk_cli_path = qmk_firmware_path / "lib/python"
 
@@ -23,13 +24,13 @@ os.environ["ORIG_CWD"] = str(orig_cwd)
 os.chdir(qmk_firmware_path)
 os.environ["QMK_HOME"] = str(qmk_firmware_path)
 
-import milc
+import milc  # noqa: E402
 
 milc.cli.milc_options(name="qmk")
 
-import qmk_cli.subcommands  # noqa: F401
-import qmk.cli  # noqa: F401
-from qmk.keycodes import load_spec
+import qmk_cli.subcommands  # noqa: E402, F401
+import qmk.cli  # noqa: E402, F401
+from qmk.keycodes import load_spec  # noqa: E402
 
 try:
     import jinja2
@@ -57,14 +58,14 @@ for value_txt, tbl in keycode_data["keycodes"].items():
         for alias in tbl["aliases"]:
             all_keycodes.add((value_num, alias))
 
-keycode_name_bytes = b''
+keycode_name_bytes = b""
 keycode_offsets = []
 for value, name in sorted(all_keycodes, key=lambda x: x[1]):
     new_offset = len(keycode_name_bytes)
     keycode_offsets.append((new_offset, value))
     keycode_name_bytes += name.encode("utf-8")
 
-keycode_offset_bytes = b''
+keycode_offset_bytes = b""
 for offset, value in keycode_offsets:
     keycode_offset_bytes += struct.pack(">H", offset)
     keycode_offset_bytes += struct.pack(">H", value)
