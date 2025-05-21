@@ -28,6 +28,7 @@ void luaL_openlibs_custom(lua_State *L) {
     }
 }
 
+#if 0
 static int nil_returner(lua_State *L) {
     lua_pushnil(L);
     return 1;
@@ -42,6 +43,7 @@ static int false_returner(lua_State *L) {
     lua_pushboolean(L, false);
     return 1;
 }
+#endif
 
 #include "keycode_lookup.c"
 static int keycode_lookup_indexer(lua_State *L) {
