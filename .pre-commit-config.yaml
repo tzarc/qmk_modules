@@ -62,5 +62,10 @@ repos:
             .*\.mk
             )$
       - id: insert-license
+        name: Insert License Header (C/C++ files)
         args: [--allow-past-years, --license-filepath=.license-header, --comment-style=//]
         types_or: [c, c++]
+      - id: insert-license
+        name: Insert License Header (Python files)
+        args: [--allow-past-years, --license-filepath=.license-header, --comment-style=#]
+        types_or: [python]
