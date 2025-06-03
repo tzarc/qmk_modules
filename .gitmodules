@@ -1,4 +1,7 @@
 [submodule "experimental/filesystem/littlefs"]
-	path = experimental/filesystem/littlefs
-	url = https://github.com/littlefs-project/littlefs.git
-	branch = master
+    path = experimental/filesystem/littlefs
+    url = https://github.com/littlefs-project/littlefs.git
+    branch = master
+[submodule "experimental/lua_keymap/lib/lua"]
+    path = experimental/lua_keymap/lib/lua
+    url = https://github.com/lua/lua.git

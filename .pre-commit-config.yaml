@@ -1,4 +1,3 @@
-exclude: .*lib/lua.*
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -16,6 +15,10 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.27.0
+    hooks:
+      - id: gitleaks
   - repo: https://github.com/JelleZijlstra/autotyping
     rev: 24.9.0
     hooks:
@@ -39,12 +42,25 @@ repos:
       - id: pretty-format-toml
         args: [--autofix]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.11
+    rev: v0.11.12
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.11.0-1
     hooks:
       - id: shfmt
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: remove-tabs
+        exclude: |
+          (?x)(
+            \.svd|
+            [mM]akefile[^\/]*|
+            .*\.mk
+            )$
+      - id: insert-license
+        args: [--allow-past-years, --license-filepath=.license-header, --comment-style=//]
+        types_or: [c, c++]
