@@ -5,3 +5,6 @@
 [submodule "experimental/lua_keymap/lib/lua"]
     path = experimental/lua_keymap/lib/lua
     url = https://github.com/lua/lua.git
+[submodule "experimental/rv32_rgb_runner/mini-rv32ima"]
+    path = experimental/rv32_rgb_runner/lib/mini-rv32ima
+    url = https://github.com/cnlohr/mini-rv32ima.git
