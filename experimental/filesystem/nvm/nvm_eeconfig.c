@@ -47,6 +47,28 @@ void nvm_eeconfig_erase(void) {
 // - Subsequent writes are (header+data) appended -- header contains (offset+length)
 // - Once a threahold is reached, rewrite the entire file with the live copy of data instead of playing back the log
 
+#define MAX_STACK_BUFFER_SIZE 32
+
+static bool fs_chunked_data_compare(fs_fd_t fd, const void *data, size_t size) {
+    uint8_t        stack_buffer[MAX_STACK_BUFFER_SIZE];
+    size_t         remaining = size;
+    size_t         offset    = 0;
+    const uint8_t *data_ptr  = (const uint8_t *)data;
+
+    while (remaining > 0) {
+        size_t chunk_size = remaining > MAX_STACK_BUFFER_SIZE ? MAX_STACK_BUFFER_SIZE : remaining;
+        if (fs_read(fd, stack_buffer, chunk_size) != chunk_size) {
+            return false; // Read error, assume different
+        }
+        if (memcmp(stack_buffer, data_ptr + offset, chunk_size) != 0) {
+            return false; // Data differs
+        }
+        offset += chunk_size;
+        remaining -= chunk_size;
+    }
+    return true; // All chunks match
+}
+
 size_t fs_read_block(const char *filename, void *data, size_t size) {
     fs_fd_t fd = fs_open(filename, FS_READ);
     if (fd == INVALID_FILESYSTEM_FD) {
@@ -68,11 +90,16 @@ size_t fs_read_block(const char *filename, void *data, size_t size) {
 
 void fs_update_block(const char *filename, const void *data, size_t size) {
     fs_hexdump("save", filename, data, size);
-    uint8_t buffer[size];
-    fs_read_block(filename, buffer, size);
-    if (memcmp(buffer, data, size) == 0) {
-        fs_dprintf("no change, skipping write\n");
-        return;
+
+    // Check if data has changed using chunked comparison
+    fs_fd_t read_fd = fs_open(filename, FS_READ);
+    if (read_fd != INVALID_FILESYSTEM_FD) {
+        if (fs_chunked_data_compare(read_fd, data, size)) {
+            fs_dprintf("no change, skipping write\n");
+            fs_close(read_fd);
+            return;
+        }
+        fs_close(read_fd);
     }
     fs_fd_t fd = fs_open(filename, FS_WRITE | FS_TRUNCATE);
     if (fd == INVALID_FILESYSTEM_FD) {
@@ -84,12 +111,16 @@ void fs_update_block(const char *filename, const void *data, size_t size) {
     }
     fs_close(fd);
 
-#if defined(FILESYSTEM_DEBUG)
-    fs_read_block(filename, buffer, size);
-    if (memcmp(buffer, data, size) != 0) {
-        fs_dprintf("readback mismatch!\n");
+#if defined(FILESYSTEM_VERIFY_WRITES)
+    // Verify write integrity for data safety
+    fs_fd_t verify_fd = fs_open(filename, FS_READ);
+    if (verify_fd != INVALID_FILESYSTEM_FD) {
+        if (!fs_chunked_data_compare(verify_fd, data, size)) {
+            fs_dprintf("readback mismatch!\n");
+        }
+        fs_close(verify_fd);
     }
-#endif // FILESYSTEM_DEBUG
+#endif // FILESYSTEM_VERIFY_WRITES
 }
 
 #define FS_RW_TYPED(type, suffix)                                     \
@@ -276,7 +307,7 @@ bool nvm_eeconfig_is_kb_datablock_valid(void) {
 }
 
 uint32_t nvm_eeconfig_read_kb_datablock(void *data, uint32_t offset, uint32_t length) {
-    if (eeconfig_is_user_datablock_valid()) {
+    if (nvm_eeconfig_is_kb_datablock_valid()) {
         fs_fd_t fd = fs_open(EECONFIG_KB_DATABLOCK, FS_READ);
         if (fd == INVALID_FILESYSTEM_FD) {
             memset(data, 0, length);
@@ -295,7 +326,7 @@ uint32_t nvm_eeconfig_read_kb_datablock(void *data, uint32_t offset, uint32_t le
 }
 
 uint32_t nvm_eeconfig_update_kb_datablock(const void *data, uint32_t offset, uint32_t length) {
-    fs_update_u32(EECONFIG_USER, (EECONFIG_USER_DATA_VERSION));
+    fs_update_u32(EECONFIG_KEYBOARD, (EECONFIG_KB_DATA_VERSION));
 
     fs_fd_t fd = fs_open(EECONFIG_KB_DATABLOCK, FS_WRITE);
     if (fd == INVALID_FILESYSTEM_FD) {
@@ -317,7 +348,7 @@ void nvm_eeconfig_init_kb_datablock(void) {
     if (fd == INVALID_FILESYSTEM_FD) {
         return;
     }
-    fs_seek(fd, -1, FS_SEEK_SET);
+    fs_seek(fd, (EECONFIG_KB_DATA_SIZE)-1, FS_SEEK_SET);
     fs_write(fd, "", 1);
     fs_close(fd);
 }
@@ -332,7 +363,7 @@ bool nvm_eeconfig_is_user_datablock_valid(void) {
 }
 
 uint32_t nvm_eeconfig_read_user_datablock(void *data, uint32_t offset, uint32_t length) {
-    if (eeconfig_is_user_datablock_valid()) {
+    if (nvm_eeconfig_is_user_datablock_valid()) {
         fs_fd_t fd = fs_open(EECONFIG_USER_DATABLOCK, FS_READ);
         if (fd == INVALID_FILESYSTEM_FD) {
             memset(data, 0, length);
@@ -373,7 +404,7 @@ void nvm_eeconfig_init_user_datablock(void) {
     if (fd == INVALID_FILESYSTEM_FD) {
         return;
     }
-    fs_seek(fd, -1, FS_SEEK_SET);
+    fs_seek(fd, (EECONFIG_USER_DATA_SIZE)-1, FS_SEEK_SET);
     fs_write(fd, "", 1);
     fs_close(fd);
 }

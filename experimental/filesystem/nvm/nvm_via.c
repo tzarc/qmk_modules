@@ -34,6 +34,13 @@ void nvm_via_update_layout_options(uint32_t val) {
 
 uint32_t nvm_via_read_custom_config(void *buf, uint32_t offset, uint32_t length) {
 #if VIA_EEPROM_CUSTOM_CONFIG_SIZE > 0
+    if (offset >= VIA_EEPROM_CUSTOM_CONFIG_SIZE) {
+        return 0; // Offset beyond bounds
+    }
+    if (offset + length > VIA_EEPROM_CUSTOM_CONFIG_SIZE) {
+        length = VIA_EEPROM_CUSTOM_CONFIG_SIZE - offset; // Clamp length
+    }
+
     char config[VIA_EEPROM_CUSTOM_CONFIG_SIZE] = {0};
     fs_read_block("via/custom_config", config, VIA_EEPROM_CUSTOM_CONFIG_SIZE);
     memcpy(buf, config + offset, length);
@@ -45,6 +52,13 @@ uint32_t nvm_via_read_custom_config(void *buf, uint32_t offset, uint32_t length)
 
 uint32_t nvm_via_update_custom_config(const void *buf, uint32_t offset, uint32_t length) {
 #if VIA_EEPROM_CUSTOM_CONFIG_SIZE > 0
+    if (offset >= VIA_EEPROM_CUSTOM_CONFIG_SIZE) {
+        return 0; // Offset beyond bounds
+    }
+    if (offset + length > VIA_EEPROM_CUSTOM_CONFIG_SIZE) {
+        length = VIA_EEPROM_CUSTOM_CONFIG_SIZE - offset; // Clamp length
+    }
+
     char config[VIA_EEPROM_CUSTOM_CONFIG_SIZE] = {0};
     fs_read_block("via/custom_config", config, VIA_EEPROM_CUSTOM_CONFIG_SIZE);
     memcpy(config + offset, buf, length);

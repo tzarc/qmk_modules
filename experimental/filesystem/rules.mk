@@ -13,6 +13,7 @@ ifneq ($(strip $(FILESYSTEM_DRIVER)),)
         OPT_DEFS += -DFILESYSTEM_ENABLE
         COMMON_VPATH += \
             $(MODULE_PATH_FILESYSTEM)/filesystem
+        # SRC += filesystem.c # This is already included in the build by virtue of having the same name as the module -- when promoting to core, need to uncomment this line
 
         # If we're using a littlefs driver, set up the common littlefs items
         ifeq ($(strip $(FILESYSTEM_DRIVER:lfs_%=lfs_)),lfs_)
