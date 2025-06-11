@@ -87,7 +87,7 @@ static void fs_dump(const char *path) {
                 dirent = fs_readdir(fd);
                 continue;
             }
-            char new_path[LFS_NAME_MAX] = {0};
+            char new_path[256] = {0};
             snprintf(new_path, sizeof(new_path), "%s/%s", (path[0] == '/' && path[1] == '\0') ? "" : path, dirent->name);
             dprintf("D: %s\n", new_path);
             fs_dump(new_path);

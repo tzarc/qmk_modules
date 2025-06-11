@@ -20,7 +20,7 @@
 typedef uint16_t fs_fd_t;
 /** @brief File offset type (signed for negative seeks) */
 typedef int32_t fs_offset_t;
-/** @brief File size type */
+/** @brief File size type (signed for errors) */
 typedef int32_t fs_size_t;
 
 /** @brief Invalid file descriptor constant */
