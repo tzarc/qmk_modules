@@ -15,8 +15,8 @@
 #    include "encoder.h"
 
 // Encoder direction constants for array indexing
-#    define ENCODER_ARRAYINDEX_CW 0  // Clockwise direction array index
-#    define ENCODER_ARRAYINDEX_CCW 1 // Counter-clockwise direction array index
+#    define ENCODER_ARRAYINDEX_CW 1  // Clockwise direction array index
+#    define ENCODER_ARRAYINDEX_CCW 0 // Counter-clockwise direction array index
 #endif                               // defined(ENCODER_ENABLE) && defined(ENCODER_MAP_ENABLE)
 
 // TODO:
@@ -354,6 +354,18 @@ void nvm_dynamic_keymap_read_buffer(uint32_t offset, uint32_t size, uint8_t *dat
         size = sizeof(dynamic_keymap_layer_cache) - offset;
     }
     memcpy(data, (uint8_t *)dynamic_keymap_layer_cache + offset, size);
+
+    // VIA expects this stuff in big endian format. Byte swap each uint16_t, based on `size`.
+    if (size % 2 != 0) {
+        // Handle odd size by reducing size to nearest even number
+        size = (size / 2) * 2;
+    }
+
+    uint16_t *src   = (uint16_t *)data;
+    uint32_t  count = size / 2; // Number of uint16_t elements to swap
+    for (uint32_t i = 0; i < count; i++) {
+        src[i] = (src[i] >> 8) | (src[i] << 8); // Byte swap
+    }
 }
 
 void nvm_dynamic_keymap_update_buffer(uint32_t offset, uint32_t size, uint8_t *data) {
@@ -363,10 +375,11 @@ void nvm_dynamic_keymap_update_buffer(uint32_t offset, uint32_t size, uint8_t *d
     uint32_t  end = offset + size;
     uint16_t *src = (uint16_t *)data;
     while (offset < end) {
-        uint16_t layer = offset / (MATRIX_ROWS * MATRIX_COLS * 2);
-        uint16_t row   = (offset / (MATRIX_COLS * 2)) % MATRIX_ROWS;
-        uint16_t col   = (offset / 2) % MATRIX_COLS;
-        nvm_dynamic_keymap_update_keycode(layer, row, col, *src);
+        uint16_t layer   = offset / (MATRIX_ROWS * MATRIX_COLS * 2);
+        uint16_t row     = (offset / (MATRIX_COLS * 2)) % MATRIX_ROWS;
+        uint16_t col     = (offset / 2) % MATRIX_COLS;
+        uint16_t keycode = (*src >> 8) | (*src << 8); // VIA sends this stuff in big endian format. Byte swap each uint16_t.
+        nvm_dynamic_keymap_update_keycode(layer, row, col, keycode);
         offset += 2;
         src++;
     }

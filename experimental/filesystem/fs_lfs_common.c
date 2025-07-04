@@ -662,6 +662,18 @@ static fs_size_t fs_read_nolock(fs_fd_t fd, void *buffer, fs_size_t length) {
         }
 
         fs_size_t ret = (fs_size_t)LFS_API_CALL(lfs_file_read, &lfs, &handle->file.file_handle, buffer, (lfs_size_t)length);
+
+        // Write out a hexdump of the data if FILESYSTEM_DEBUG is defined
+#ifdef FILESYSTEM_DEBUG
+        if (ret >= 0) {
+            fs_dprintf("Read %d bytes from file %d: | ", (int)ret, fd);
+            for (fs_size_t i = 0; i < ret; ++i) {
+                dprintf("%02x ", ((const uint8_t *)buffer)[i]);
+            }
+            dprintf("|\n");
+        }
+#endif
+
         return (ret < 0) ? -1 : ret;
     });
     return -1;
@@ -682,6 +694,18 @@ static fs_size_t fs_write_nolock(fs_fd_t fd, const void *buffer, fs_size_t lengt
         }
 
         fs_size_t ret = (fs_size_t)LFS_API_CALL(lfs_file_write, &lfs, &handle->file.file_handle, buffer, (lfs_size_t)length);
+
+        // Write out a hexdump of the data if FILESYSTEM_DEBUG is defined
+#ifdef FILESYSTEM_DEBUG
+        if (ret >= 0) {
+            fs_dprintf("Wrote %d bytes to file %d: | ", (int)ret, fd);
+            for (fs_size_t i = 0; i < ret; ++i) {
+                dprintf("%02x ", ((const uint8_t *)buffer)[i]);
+            }
+            dprintf("|\n");
+        }
+#endif
+
         return (ret < 0) ? -1 : ret;
     });
     return -1;
