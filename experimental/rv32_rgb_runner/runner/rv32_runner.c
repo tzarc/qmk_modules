@@ -1,6 +1,7 @@
 // Copyright 2024-2025 Nick Brassel (@tzarc)
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <stdint.h>
+#include <string.h>
 #include "stdbool.h"
 #include "ecall.h"
 #include "rv32_runner.h"
@@ -15,7 +16,8 @@ static inline uint32_t g_rgb_timer(void) {
 
 static inline RV32_HSV rgb_matrix_config_hsv(void) {
     RV32_HSV hsv;
-    *(uint32_t *)&hsv = _ecall0(RV32_ECALL_RGB_MATRIX_CONFIG_HSV).a0;
+    uint32_t raw = _ecall0(RV32_ECALL_RGB_MATRIX_CONFIG_HSV).a0;
+    memcpy(&hsv, &raw, sizeof(RV32_HSV));
     return hsv;
 }
 
@@ -49,11 +51,14 @@ static inline uint8_t sin8(uint8_t x) {
 
 static inline RV32_RGB rgb_matrix_hsv_to_rgb(RV32_HSV hsv) {
     RV32_RGB rgb;
-    *(uint32_t *)&rgb = _ecall1(RV32_ECALL_HSV_TO_RGB, *(uint32_t *)&hsv).a0;
+    uint32_t hsv_raw, rgb_raw;
+    memcpy(&hsv_raw, &hsv, sizeof(RV32_HSV));
+    rgb_raw = _ecall1(RV32_ECALL_HSV_TO_RGB, hsv_raw).a0;
+    memcpy(&rgb, &rgb_raw, sizeof(RV32_RGB));
     return rgb;
 }
 
-#define MAX_RGB_MATRIX_LED_COUNT 512
+#define MAX_RGB_MATRIX_LED_COUNT 256
 
 static uint8_t time_offsets[MAX_RGB_MATRIX_LED_COUNT] = {0};
 

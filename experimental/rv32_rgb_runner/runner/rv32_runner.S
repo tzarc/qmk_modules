@@ -8,6 +8,7 @@
         .long _sstack                   # First 4 bytes of the data represent the total amount of RAM required
 
 _start:
+        bltz t0, _shutdown              # exit if index is negative
         la t3, _api_table_end           # end of table
         la t2, _api_table               # start of table
         li t1, 4                        # index multiplier
@@ -24,7 +25,7 @@ _start:
 _shutdown:
         li a7, 0                        # load 0 (RV32_EXIT) as ecall param
         ecall                           # kick off termination procedure
-        j _shutdown                     # Keep retying shutdown if there was a failure for whatever reason
+        j _shutdown                     # Keep retrying shutdown if there was a failure for whatever reason
 
 .global _api_table
 
