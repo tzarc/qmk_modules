@@ -131,7 +131,7 @@ static void rv32vm_invoke(rv32_api_t api) {
     static bool can_run     = false;
     if (!has_checked) {
         has_checked           = true;
-        uint32_t required_ram = (((uint32_t)rv32_runner_bin[0]) << 0 | ((uint32_t)rv32_runner_bin[1]) << 8 | ((uint32_t)rv32_runner_bin[2]) << 16 | ((uint32_t)rv32_runner_bin[3]) << 24) - MINIRV32_RAM_IMAGE_OFFSET;
+        uint32_t required_ram = (((uint32_t)rv32_runner_bin[0]) << 0 | ((uint32_t)rv32_runner_bin[1]) << 8 | ((uint32_t)rv32_runner_bin[2]) << 16 | ((uint32_t)rv32_runner_bin[3]) << 24);
         dprintf("Required RAM: %d\n", (int)required_ram);
         if (required_ram > MINI_RV32_RAM_SIZE) {
             dprintf("Not enough RAM for MiniRV32IMAStepRGB: %d > %d\n", (int)required_ram, (int)MINI_RV32_RAM_SIZE);

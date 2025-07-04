@@ -1,3 +1,5 @@
+compile_commands.json
+rv32_runner.S
 rv32_runner.bin
 rv32_runner.debug.txt
 rv32_runner.elf

@@ -13,28 +13,29 @@ PREFIX := riscv32-unknown-elf-
 CFLAGS := -fno-stack-protector -fno-common -flto=auto
 CFLAGS += -static-libgcc -fdata-sections -ffunction-sections
 CFLAGS += -g -Os -march=rv32ima_zicsr -mabi=ilp32 -static
-CXXFLAGS += -fno-rtti -fno-exceptions
-LDFLAGS := -T flatfile.lds -nostdlib -Wl,--gc-sections
+LDFLAGS := -T internal/flatfile.lds -nostdlib -Wl,--gc-sections
 
-OBJS := $(wildcard *.c) $(wildcard *.cpp) $(wildcard *.S)
+OBJS := $(wildcard *.c) $(wildcard internal/*.c) internal/$(PROJECT).S
 OBJS := $(patsubst %.c,%.c.o,$(OBJS))
-OBJS := $(patsubst %.cpp,%.cpp.o,$(OBJS))
 OBJS := $(patsubst %.S,%.S.o,$(OBJS))
 OBJS := $(addprefix $(OBJ_DIR)/, $(OBJS))
+
+internal/$(PROJECT).S: internal/$(PROJECT).S.in ../api_bindings.h Makefile
+	$(PREFIX)gcc -E -x assembler-with-cpp $< | sed -e 's|__NL__|\n|g' > $@
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(OBJS): | $(OBJ_DIR)
+$(OBJ_DIR)/internal: $(OBJ_DIR)
+	mkdir -p $(OBJ_DIR)/internal
+
+$(OBJS): | $(OBJ_DIR)/internal
 
 $(OBJ_DIR)/%.c.o : %.c
 	$(PREFIX)gcc -c -o $@ $^ $(CFLAGS)
 
 $(OBJ_DIR)/%.S.o : %.S
 	$(PREFIX)gcc -c -o $@ $^ $(CFLAGS)
-
-$(OBJ_DIR)/%.cpp.o : %.cpp
-	$(PREFIX)g++ -c -o $@ $^ $(CFLAGS) $(CXXFLAGS)
 
 $(PROJECT).elf : $(OBJS)
 	$(PREFIX)gcc -o $@ $^ $(CFLAGS) $(LDFLAGS)

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "../api_bindings.h"
 
 // List of rv32 register indices
 enum {
@@ -42,28 +43,16 @@ enum {
 
 // This list needs to be kept in-sync with the api_table in rv32_runner.S
 typedef enum rv32_api_t {
-    RV32_EFFECT_CTORS = 0,
-    RV32_EFFECT_DTORS,
-    RV32_EFFECT_INIT,
-    RV32_EFFECT_BEGIN_ITER,
-    RV32_EFFECT_LED,
-    RV32_EFFECT_END_ITER,
+#define X(_1, _2, name, ...) RV32_EFFECT_##name,
+    RV32RGB_GUESTCALLS(X)
+#undef X
 } rv32_api_t;
 
 // This list needs to be kept in sync with rv32_runner.c
 typedef enum rv32_calls_t {
-    RV32_EXIT = 0,
-    RV32_ECALL_TIMER_READ32,
-    RV32_ECALL_RGB_TIMER,
-    RV32_ECALL_RGB_MATRIX_CONFIG_HSV,
-    RV32_ECALL_RGB_MATRIX_CONFIG_SPEED,
-    RV32_ECALL_RAND,
-    RV32_ECALL_SCALE16BY8,
-    RV32_ECALL_SCALE8,
-    RV32_ECALL_ABS8,
-    RV32_ECALL_SIN8,
-    RV32_ECALL_HSV_TO_RGB,
-    RV32_ECALL_RGB_MATRIX_SET_COLOR,
+#define X(_1, _2, name, ...) RV32_ECALL_##name,
+    RV32RGB_HYPERCALLS(X)
+#undef X
 } rv32_calls_t;
 
 typedef struct __attribute__((packed)) RV32_HSV {

@@ -9,7 +9,7 @@ typedef struct ecall_ret {
     uintptr_t a1;
 } ecall_ret;
 
-__attribute__((always_inline)) static inline ecall_ret _ecall7(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, uintptr_t arg6) {
+static inline ecall_ret _ecall7(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, uintptr_t arg6) {
     register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);
     register uintptr_t a1 asm("a1") = (uintptr_t)(arg1);
     register uintptr_t a2 asm("a2") = (uintptr_t)(arg2);
@@ -22,7 +22,7 @@ __attribute__((always_inline)) static inline ecall_ret _ecall7(int n, uintptr_t 
     return (ecall_ret){.a0 = a0, .a1 = a1};
 }
 
-__attribute__((always_inline)) static inline ecall_ret _ecall6(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5) {
+static inline ecall_ret _ecall6(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5) {
     register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);
     register uintptr_t a1 asm("a1") = (uintptr_t)(arg1);
     register uintptr_t a2 asm("a2") = (uintptr_t)(arg2);
@@ -34,7 +34,7 @@ __attribute__((always_inline)) static inline ecall_ret _ecall6(int n, uintptr_t 
     return (ecall_ret){.a0 = a0, .a1 = a1};
 }
 
-__attribute__((always_inline)) static inline ecall_ret _ecall5(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4) {
+static inline ecall_ret _ecall5(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4) {
     register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);
     register uintptr_t a1 asm("a1") = (uintptr_t)(arg1);
     register uintptr_t a2 asm("a2") = (uintptr_t)(arg2);
@@ -45,7 +45,7 @@ __attribute__((always_inline)) static inline ecall_ret _ecall5(int n, uintptr_t 
     return (ecall_ret){.a0 = a0, .a1 = a1};
 }
 
-__attribute__((always_inline)) static inline ecall_ret _ecall4(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3) {
+static inline ecall_ret _ecall4(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3) {
     register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);
     register uintptr_t a1 asm("a1") = (uintptr_t)(arg1);
     register uintptr_t a2 asm("a2") = (uintptr_t)(arg2);
@@ -55,7 +55,7 @@ __attribute__((always_inline)) static inline ecall_ret _ecall4(int n, uintptr_t 
     return (ecall_ret){.a0 = a0, .a1 = a1};
 }
 
-__attribute__((always_inline)) static inline ecall_ret _ecall3(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2) {
+static inline ecall_ret _ecall3(int n, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2) {
     register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);
     register uintptr_t a1 asm("a1") = (uintptr_t)(arg1);
     register uintptr_t a2 asm("a2") = (uintptr_t)(arg2);
@@ -64,7 +64,7 @@ __attribute__((always_inline)) static inline ecall_ret _ecall3(int n, uintptr_t 
     return (ecall_ret){.a0 = a0, .a1 = a1};
 }
 
-__attribute__((always_inline)) static inline ecall_ret _ecall2(int n, uintptr_t arg0, uintptr_t arg1) {
+static inline ecall_ret _ecall2(int n, uintptr_t arg0, uintptr_t arg1) {
     register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);
     register uintptr_t a1 asm("a1") = (uintptr_t)(arg1);
     register uintptr_t a7 asm("a7") = (uintptr_t)(n);
@@ -72,7 +72,7 @@ __attribute__((always_inline)) static inline ecall_ret _ecall2(int n, uintptr_t 
     return (ecall_ret){.a0 = a0, .a1 = a1};
 }
 
-__attribute__((always_inline)) static inline ecall_ret _ecall1(int n, uintptr_t arg0) {
+static inline ecall_ret _ecall1(int n, uintptr_t arg0) {
     register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);
     register uintptr_t a1 asm("a1");
     register uintptr_t a7 asm("a7") = (uintptr_t)(n);
@@ -80,7 +80,7 @@ __attribute__((always_inline)) static inline ecall_ret _ecall1(int n, uintptr_t 
     return (ecall_ret){.a0 = a0, .a1 = a1};
 }
 
-__attribute__((always_inline)) static inline ecall_ret _ecall0(int n) {
+static inline ecall_ret _ecall0(int n) {
     register uintptr_t a0 asm("a0");
     register uintptr_t a1 asm("a1");
     register uintptr_t a7 asm("a7") = (uintptr_t)(n);

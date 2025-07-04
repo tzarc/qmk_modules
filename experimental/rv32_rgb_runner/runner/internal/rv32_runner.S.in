@@ -5,14 +5,21 @@
 .global _start
 
 .align 4
-        .long _sstack                   # First 4 bytes of the data represent the total amount of RAM required
+_base_address:
+        .long _sstack-_base_address                   # First 4 bytes of the data represent the total amount of RAM required
+
+# For hypervisor->guest calls:
+#   t0 is used as the index into the API table
+#   normal ABI used -- parameters (a0, a1, ...), returns in (a0, a1)
+# For guest->hypervisor calls:
+#   Linux-style syscall ECALL syntax used -- a7 for syscall number, a0...a6 for parameters
 
 _start:
         bltz t0, _shutdown              # exit if index is negative
         la t3, _api_table_end           # end of table
         la t2, _api_table               # start of table
         li t1, 4                        # index multiplier
-        mul t0, t0, t1                  # multiply supplied index (t0) by 4 to get memory offset
+        mul t0, t0, t1                  # multiply supplied index (t0) by 4 to get memory offset within the API table
         add t0, t0, t2                  # add memory offset to start of table to get function to invoke
         bge t0, t3, _shutdown           # exit if we've calculated past the end of the table
         lw t0, 0(t0)                    # load the address from the table
@@ -23,25 +30,23 @@ _start:
         jalr t0                         # invoke the function from the table
 
 _shutdown:
-        li a7, 0                        # load 0 (RV32_EXIT) as ecall param
+        li a7, 0                        # load 0 (EXIT) as ecall param
         ecall                           # kick off termination procedure
         j _shutdown                     # Keep retrying shutdown if there was a failure for whatever reason
 
 .global _api_table
 
-.weak ctors_thunk
-.weak dtors_thunk
-.weak effect_init_thunk
-.weak effect_begin_iter_thunk
-.weak effect_led_thunk
-.weak effect_end_iter_thunk
+#include "../../api_bindings.h"
+
+#define X(_1, _2, name, ...) \
+    __NL__ .weak name##_thunk
+RV32RGB_GUESTCALLS(X)
+#undef X
 
 _api_table:                             # API table for functions to invoke -- kicking off the core with t0 set to an index will invoke the corresponding API
-        .long ctors_thunk
-        .long dtors_thunk
-        .long effect_init_thunk
-        .long effect_begin_iter_thunk
-        .long effect_led_thunk
-        .long effect_end_iter_thunk
+#define X(_1, _2, name, ...) \
+    __NL__ .long name##_thunk
+RV32RGB_GUESTCALLS(X)
+#undef X
 
 _api_table_end:

@@ -6,7 +6,7 @@ MEMORY
     TEXT (rwx) : ORIGIN = 0x80000000, LENGTH = 2048  # 2kB total for code + RAM
 }
 
-ENTRY(_load)
+ENTRY(_start)
 
 SECTIONS
 {
