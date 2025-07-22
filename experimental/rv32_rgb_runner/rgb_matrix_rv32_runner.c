@@ -124,7 +124,7 @@ static rv32vm_ecall_result_t rv32vm_ecall_handler(void) {
     return RV32_CONTINUE;
 }
 
-static void rv32vm_invoke(rv32_api_t api) {
+static void rv32vm_invoke(rv32rgb_guestcall_t api) {
     if (timer_read32() < 5000) return; // don't do anything for first 5 seconds of bootup, so we can actually let console connect, but also bootmagic will run
 
     static bool has_checked = false;

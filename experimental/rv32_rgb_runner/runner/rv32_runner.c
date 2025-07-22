@@ -8,7 +8,7 @@
 #include "internal/ecall.h"
 #include "internal/hypercalls.h"
 
-#define X(thunksuffix, ret_type, name, argcount, ...) MAKE_HYPERCALL_##thunksuffix##_##argcount(name, ret_type, __VA_ARGS__)
+#define X(thunksuffix, ret_type, name, argcount, ...) MAKE_HYPERCALL_##thunksuffix##_##argcount(ret_type, name, ##__VA_ARGS__)
 RV32RGB_HYPERCALLS(X)
 #undef X
 

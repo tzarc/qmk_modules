@@ -41,19 +41,17 @@ enum {
     rv32reg_x31_t6,
 };
 
-// This list needs to be kept in-sync with the api_table in rv32_runner.S
-typedef enum rv32_api_t {
+typedef enum rv32rgb_guestcall_t {
 #define X(_1, _2, name, ...) RV32_EFFECT_##name,
     RV32RGB_GUESTCALLS(X)
 #undef X
-} rv32_api_t;
+} rv32rgb_guestcall_t;
 
-// This list needs to be kept in sync with rv32_runner.c
-typedef enum rv32_calls_t {
+typedef enum rv32rgb_hypercall_t {
 #define X(_1, _2, name, ...) RV32_ECALL_##name,
     RV32RGB_HYPERCALLS(X)
 #undef X
-} rv32_calls_t;
+} rv32rgb_hypercall_t;
 
 typedef struct __attribute__((packed)) RV32_HSV {
     uint8_t h;

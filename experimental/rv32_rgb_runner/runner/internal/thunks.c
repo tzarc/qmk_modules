@@ -33,6 +33,6 @@ void dtors(void) {
     invoke_fptr_array(&__fini_array_start, &__fini_array_end);
 }
 
-#define X(thunksuffix, ret_type, name, argcount, ...) MAKE_GUESTCALL_##thunksuffix##_##argcount(name, ##__VA_ARGS__)
+#define X(thunksuffix, ret_type, name, argcount, ...) MAKE_GUESTCALL_##thunksuffix##_##argcount(ret_type, name, ##__VA_ARGS__)
 RV32RGB_GUESTCALLS(X)
 #undef X
