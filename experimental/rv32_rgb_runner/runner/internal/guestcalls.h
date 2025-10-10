@@ -132,22 +132,22 @@
         _Static_assert(sizeof(argtype2) <= sizeof(uintptr_t), "Argument type 2 too large for ecall"); \
         _Static_assert(sizeof(argtype3) <= sizeof(uintptr_t), "Argument type 3 too large for ecall"); \
         extern ret_type name(argtype1, argtype2, argtype3);                                           \
-        if (!name) return;                         \
-        register uintptr_t a0 asm("a0");           \
-        register uintptr_t a1 asm("a1");           \
-        register uintptr_t a2 asm("a2");           \
-        uintptr_t          v0 = a0;                \
-        uintptr_t          v1 = a1;                \
-        uintptr_t          v2 = a2;                \
-        argtype1           arg1;                   \
-        argtype2           arg2;                   \
-        argtype3           arg3;                   \
-        memcpy(&arg1, &v0, sizeof(argtype1));      \
-        memcpy(&arg2, &v1, sizeof(argtype2));      \
-        memcpy(&arg3, &v2, sizeof(argtype3));      \
-        ret_type  r   = name(arg1, arg2, arg3);    \
-        ecall_ret ret = {.a0 = 0, .a1 = 0};        \
-        memcpy(&ret, &r, sizeof(ret_type));        \
-        a0 = ret.a0;                               \
-        a1 = ret.a1;                               \
+        if (!name) return;                                                                            \
+        register uintptr_t a0 asm("a0");                                                              \
+        register uintptr_t a1 asm("a1");                                                              \
+        register uintptr_t a2 asm("a2");                                                              \
+        uintptr_t          v0 = a0;                                                                   \
+        uintptr_t          v1 = a1;                                                                   \
+        uintptr_t          v2 = a2;                                                                   \
+        argtype1           arg1;                                                                      \
+        argtype2           arg2;                                                                      \
+        argtype3           arg3;                                                                      \
+        memcpy(&arg1, &v0, sizeof(argtype1));                                                         \
+        memcpy(&arg2, &v1, sizeof(argtype2));                                                         \
+        memcpy(&arg3, &v2, sizeof(argtype3));                                                         \
+        ret_type  r   = name(arg1, arg2, arg3);                                                       \
+        ecall_ret ret = {.a0 = 0, .a1 = 0};                                                           \
+        memcpy(&ret, &r, sizeof(ret_type));                                                           \
+        a0 = ret.a0;                                                                                  \
+        a1 = ret.a1;                                                                                  \
     }
