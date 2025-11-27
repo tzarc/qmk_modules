@@ -38,7 +38,7 @@ static uint32_t rv32vm_handle_load(uint32_t addy);
 
 static uint32_t rv32vm_handle_store(uint32_t addy, uint32_t val);
 
-#define MINIRV32_STEPPROTO MINIRV32_DECORATE int32_t MiniRV32IMAStepRGB(struct MiniRV32IMAState* state, uint8_t* image, uint32_t vProcAddress, uint32_t elapsedUs, int count)
+#define MINIRV32_STEPPROTO MINIRV32_DECORATE int32_t MiniRV32IMAStepRGB(struct MiniRV32IMAState *state, uint8_t *image, uint32_t vProcAddress, uint32_t elapsedUs, int count)
 
 #define MINIRV32_IMPLEMENTATION
 #include "lib/mini-rv32ima/mini-rv32ima/mini-rv32ima.h"
@@ -184,7 +184,7 @@ uint32_t get_systick_count(void) {
 
 static bool should_dump_exec_times = false;
 
-void rv32vm_effect_init_impl(effect_params_t* params) {
+void rv32vm_effect_init_impl(effect_params_t *params) {
     static bool initial = false;
     if (!initial) {
         initial      = true;
@@ -205,20 +205,20 @@ void rv32vm_effect_init_impl(effect_params_t* params) {
     rv32vm_invoke(RV32_EFFECT_INIT);
 }
 
-void rv32vm_effect_begin_iter_impl(effect_params_t* params, uint8_t led_min, uint8_t led_max) {
+void rv32vm_effect_begin_iter_impl(effect_params_t *params, uint8_t led_min, uint8_t led_max) {
     rgb_core.regs[rv32reg_x10_a0] = (uint32_t)(uintptr_t)params;
     rgb_core.regs[rv32reg_x11_a1] = (uint32_t)led_min;
     rgb_core.regs[rv32reg_x12_a2] = (uint32_t)led_max;
     rv32vm_invoke(RV32_EFFECT_BEGIN_ITER);
 }
 
-void rv32vm_effect_led_impl(effect_params_t* params, uint8_t led_index) {
+void rv32vm_effect_led_impl(effect_params_t *params, uint8_t led_index) {
     rgb_core.regs[rv32reg_x10_a0] = (uint32_t)(uintptr_t)params;
     rgb_core.regs[rv32reg_x11_a1] = (uint32_t)led_index;
     rv32vm_invoke(RV32_EFFECT_LED);
 }
 
-void rv32vm_effect_end_iter_impl(effect_params_t* params) {
+void rv32vm_effect_end_iter_impl(effect_params_t *params) {
     rgb_core.regs[rv32reg_x10_a0] = (uint32_t)(uintptr_t)params;
     rv32vm_invoke(RV32_EFFECT_END_ITER);
 }
