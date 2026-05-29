@@ -1,4 +1,6 @@
 {
     "module_name": "Lua Keymap Testing",
-    "maintainer": "tzarc"
+    "maintainer": "tzarc",
+    "license": "GPL-2.0-or-later",
+    "description": "A module to test implementing keymaps in Lua."
 }

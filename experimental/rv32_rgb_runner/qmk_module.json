@@ -1,4 +1,6 @@
 {
     "module_name": "RISC-V VM RGB Effect",
-    "maintainer": "tzarc"
+    "maintainer": "tzarc",
+    "license": "GPL-2.0-or-later",
+    "description": "A module to implement an RGB effect that is implemented using a RISC-V virtual machine."
 }

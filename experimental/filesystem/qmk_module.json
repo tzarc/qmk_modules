@@ -1,6 +1,8 @@
 {
     "module_name": "Filesystem Testing",
     "maintainer": "tzarc",
+    "license": "GPL-2.0-or-later",
+    "description": "A module to test filesystem code, using the littlefs library binding to replace EEPROM.",
     "keycodes": [
         {
             "key": "FS_DUMP"

@@ -1,4 +1,6 @@
 {
     "module_name": "Konami Code",
-    "maintainer": "tzarc"
+    "maintainer": "tzarc",
+    "license": "GPL-2.0-or-later",
+    "description": "A module to implement the Konami Code sequence."
 }

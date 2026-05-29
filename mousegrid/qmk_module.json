@@ -1,0 +1,26 @@
+{
+    "module_name": "Mouse Grid",
+    "maintainer": "tzarc",
+    "license": "GPL-2.0-or-later",
+    "description": "Grid-based absolute mouse cursor positioning using the HID digitizer.",
+    "features": {
+        "digitizer": true
+    },
+    "keycodes": [
+        { "key": "MOUSEGRID_TL",   "aliases": ["MG_TL"]   },
+        { "key": "MOUSEGRID_T",    "aliases": ["MG_T"]    },
+        { "key": "MOUSEGRID_TR",   "aliases": ["MG_TR"]   },
+        { "key": "MOUSEGRID_L",    "aliases": ["MG_L"]    },
+        { "key": "MOUSEGRID_C",    "aliases": ["MG_C"]    },
+        { "key": "MOUSEGRID_R",    "aliases": ["MG_R"]    },
+        { "key": "MOUSEGRID_BL",   "aliases": ["MG_BL"]   },
+        { "key": "MOUSEGRID_B",    "aliases": ["MG_B"]    },
+        { "key": "MOUSEGRID_BR",   "aliases": ["MG_BR"]   },
+        { "key": "MOUSEGRID_RST",  "aliases": ["MG_RST"]  },
+        { "key": "MOUSEGRID_ANIM", "aliases": ["MG_ANIM"] },
+        { "key": "MOUSEGRID_UNDO", "aliases": ["MG_UNDO"] },
+        { "key": "MOUSEGRID_NEAR", "aliases": ["MG_NEAR"] },
+        { "key": "MOUSEGRID_LOOP", "aliases": ["MG_LOOP"] },
+        { "key": "MOUSEGRID_STOP", "aliases": ["MG_STOP"] }
+    ]
+}

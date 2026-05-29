@@ -1,6 +1,8 @@
 {
     "module_name": "SFDP Flash Driver",
     "maintainer": "tzarc",
+    "license": "GPL-2.0-or-later",
+    "description": "A module to implement a flash driver using the SFDP standard.",
     "keycodes": [
         {
             "key": "KC_SFDP"

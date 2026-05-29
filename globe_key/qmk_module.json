@@ -1,6 +1,8 @@
 {
     "module_name": "Globe Key",
     "maintainer": "tzarc",
+    "license": "GPL-2.0-or-later",
+    "description": "A module to implement the macOS globe key.",
     "keycodes": [
         {
             "key": "KC_GLOBE",
