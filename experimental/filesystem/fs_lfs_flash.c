@@ -1,4 +1,4 @@
-// Copyright 2022-2025 Nick Brassel (@tzarc)
+// Copyright 2022-2026 Nick Brassel (@tzarc)
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <stdbool.h>
 #include <ch.h>
