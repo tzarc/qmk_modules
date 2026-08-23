@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "../../api_bindings.h"
+#include "../../common/api_bindings.h"
 #include "guestcalls.h"
 
 extern void effect_init(void *params) __attribute__((weak));

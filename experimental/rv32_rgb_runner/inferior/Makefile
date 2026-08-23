@@ -20,7 +20,7 @@ OBJS := $(patsubst %.c,%.c.o,$(OBJS))
 OBJS := $(patsubst %.S,%.S.o,$(OBJS))
 OBJS := $(addprefix $(OBJ_DIR)/, $(OBJS))
 
-internal/$(PROJECT).S: internal/$(PROJECT).S.in ../api_bindings.h Makefile
+internal/$(PROJECT).S: internal/$(PROJECT).S.in ../common/api_bindings.h Makefile
 	$(PREFIX)gcc -E -x assembler-with-cpp $< | sed -e 's|__NL__|\n|g' > $@
 
 $(OBJ_DIR):

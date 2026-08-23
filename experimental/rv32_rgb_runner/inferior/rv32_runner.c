@@ -45,6 +45,7 @@ void effect_begin_iter(void *params, uint8_t led_min, uint8_t led_max) {
 }
 
 void effect_led(void *params, uint8_t led_index) {
+    if (led_index >= MAX_RGB_MATRIX_LED_COUNT) return;
     uint16_t time = scale16by8((g_rgb_timer / 2) + (((uint16_t)time_offsets[led_index]) << 5), speed / 16);
     uint8_t  v    = scale8(abs8(sin8(time) - 128) * 2, hsv.v);
     RV32_RGB rgb  = rgb_matrix_hsv_to_rgb((RV32_HSV){.h = hsv.h, .s = hsv.s, .v = v});

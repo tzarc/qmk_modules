@@ -36,7 +36,7 @@ _shutdown:
 
 .global _api_table
 
-#include "../../api_bindings.h"
+#include "../../common/api_bindings.h"
 
 #define X(_1, _2, name, ...) \
     __NL__ .weak name##_thunk

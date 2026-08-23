@@ -3,7 +3,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "../api_bindings.h"
+#include "../common/api_bindings.h"
 
 // List of rv32 register indices
 enum {

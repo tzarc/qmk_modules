@@ -2,16 +2,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <string.h>
 #include <stdbool.h>
-#include <ch.h>
 #include "rgb_matrix.h"
 #include "debug.h"
-#include "rgb_matrix.h"
 #include "color.h"
 #include "timer.h"
 #include "sync_timer.h"
 #include <lib/lib8tion/lib8tion.h>
-#include "rv32_rgb_runner.inl.h"
-#include "runner/rv32_runner.h"
+#include "../rv32_rgb_runner.inl.h"
+#include "../inferior/rv32_runner.h"
 
 extern int rand(void);
 
@@ -61,14 +59,14 @@ typedef enum rv32vm_ecall_result_t {
 
 static rv32vm_ecall_result_t rv32vm_ecall_handler(void) {
     switch (rgb_core.regs[rv32reg_x17_a7]) {
-        case RV32_EXIT:
+        case RV32_ECALL_exit_vm:
             rgb_core.pc = MINIRV32_RAM_IMAGE_OFFSET;
             return RV32_TERMINATE;
-        case RV32_ECALL_RGB_TIMER: {
+        case RV32_ECALL_rgb_timer: {
             extern uint32_t g_rgb_timer;
             rgb_core.regs[rv32reg_x10_a0] = g_rgb_timer;
         } break;
-        case RV32_ECALL_RGB_MATRIX_CONFIG_HSV: {
+        case RV32_ECALL_rgb_matrix_config_hsv: {
             RV32_HSV hsv = {
                 .h = rgb_matrix_config.hsv.h,
                 .s = rgb_matrix_config.hsv.s,
@@ -84,25 +82,25 @@ static rv32vm_ecall_result_t rv32vm_ecall_handler(void) {
             };
             rgb_core.regs[rv32reg_x10_a0] = out.raw;
         } break;
-        case RV32_ECALL_RGB_MATRIX_CONFIG_SPEED:
+        case RV32_ECALL_rgb_matrix_config_speed:
             rgb_core.regs[rv32reg_x10_a0] = rgb_matrix_config.speed;
             break;
-        case RV32_ECALL_RAND:
+        case RV32_ECALL_rand:
             rgb_core.regs[rv32reg_x10_a0] = rand();
             break;
-        case RV32_ECALL_SCALE16BY8:
+        case RV32_ECALL_scale16by8:
             rgb_core.regs[rv32reg_x10_a0] = scale16by8(rgb_core.regs[rv32reg_x10_a0], rgb_core.regs[rv32reg_x11_a1]);
             break;
-        case RV32_ECALL_SCALE8:
+        case RV32_ECALL_scale8:
             rgb_core.regs[rv32reg_x10_a0] = scale8(rgb_core.regs[rv32reg_x10_a0], rgb_core.regs[rv32reg_x11_a1]);
             break;
-        case RV32_ECALL_ABS8:
+        case RV32_ECALL_abs8:
             rgb_core.regs[rv32reg_x10_a0] = abs8(rgb_core.regs[rv32reg_x10_a0]);
             break;
-        case RV32_ECALL_SIN8:
+        case RV32_ECALL_sin8:
             rgb_core.regs[rv32reg_x10_a0] = sin8(rgb_core.regs[rv32reg_x10_a0]);
             break;
-        case RV32_ECALL_HSV_TO_RGB: {
+        case RV32_ECALL_rgb_matrix_hsv_to_rgb: {
             union {
                 uint32_t raw;
                 RV32_HSV hsv;
@@ -114,10 +112,10 @@ static rv32vm_ecall_result_t rv32vm_ecall_handler(void) {
             } out                         = {.rgb.r = rgb.r, .rgb.g = rgb.g, .rgb.b = rgb.b};
             rgb_core.regs[rv32reg_x10_a0] = out.raw;
         } break;
-        case RV32_ECALL_TIMER_READ32:
+        case RV32_ECALL_timer_read32:
             rgb_core.regs[rv32reg_x10_a0] = sync_timer_read32();
             break;
-        case RV32_ECALL_RGB_MATRIX_SET_COLOR:
+        case RV32_ECALL_rgb_matrix_set_color:
             rgb_matrix_set_color(rgb_core.regs[rv32reg_x10_a0], rgb_core.regs[rv32reg_x11_a1], rgb_core.regs[rv32reg_x12_a2], rgb_core.regs[rv32reg_x13_a3]);
             break;
     }
@@ -178,12 +176,6 @@ static void rv32vm_invoke(rv32rgb_guestcall_t api) {
     }
 }
 
-uint32_t get_systick_count(void) {
-    return chVTGetSystemTimeX();
-}
-
-static bool should_dump_exec_times = false;
-
 void rv32vm_effect_init_impl(effect_params_t *params) {
     static bool initial = false;
     if (!initial) {
@@ -192,33 +184,26 @@ void rv32vm_effect_init_impl(effect_params_t *params) {
         memset(&rgb_core, 0, sizeof(rgb_core));
         memset(rgb_ram_area, 0, sizeof(rgb_ram_area));
         memcpy(rgb_ram_area, rv32_runner_bin, rv32_runner_bin_len);
-        rv32vm_invoke(RV32_EFFECT_CTORS);
+        rv32vm_invoke(RV32_EFFECT_ctors);
     }
 
-    if (!should_dump_exec_times && false) {
-        should_dump_exec_times = true;
-        dprintf("Exec time: %d\n", (int)get_systick_count());
-    }
-    if (should_dump_exec_times) {
-        dprintf("Exec time: %d\n", (int)get_systick_count());
-    }
-    rv32vm_invoke(RV32_EFFECT_INIT);
+    rv32vm_invoke(RV32_EFFECT_effect_init);
 }
 
 void rv32vm_effect_begin_iter_impl(effect_params_t *params, uint8_t led_min, uint8_t led_max) {
     rgb_core.regs[rv32reg_x10_a0] = (uint32_t)(uintptr_t)params;
     rgb_core.regs[rv32reg_x11_a1] = (uint32_t)led_min;
     rgb_core.regs[rv32reg_x12_a2] = (uint32_t)led_max;
-    rv32vm_invoke(RV32_EFFECT_BEGIN_ITER);
+    rv32vm_invoke(RV32_EFFECT_effect_begin_iter);
 }
 
 void rv32vm_effect_led_impl(effect_params_t *params, uint8_t led_index) {
     rgb_core.regs[rv32reg_x10_a0] = (uint32_t)(uintptr_t)params;
     rgb_core.regs[rv32reg_x11_a1] = (uint32_t)led_index;
-    rv32vm_invoke(RV32_EFFECT_LED);
+    rv32vm_invoke(RV32_EFFECT_effect_led);
 }
 
 void rv32vm_effect_end_iter_impl(effect_params_t *params) {
     rgb_core.regs[rv32reg_x10_a0] = (uint32_t)(uintptr_t)params;
-    rv32vm_invoke(RV32_EFFECT_END_ITER);
+    rv32vm_invoke(RV32_EFFECT_effect_end_iter);
 }
