@@ -22,6 +22,14 @@ On a 1920×1080 screen, four iterations of a 3×3 grid reach a region of approxi
 
 All arithmetic is done in fixed-point integers. The float conversion happens only when sending the position to the digitizer, which matters on MCUs without a hardware FPU.
 
+## Absolute pointer
+
+Some compositors (notably KDE Plasma) hide the on-screen pointer when input arrives from a digitizer, treating it as a touch-like input that doesn't need a cursor. To avoid this, the module's `config.h` defines `DIGITIZER_ABSOLUTE_POINTER`, which changes the digitizer's HID report descriptor from a stylus to a Generic Desktop mouse with absolute X/Y — the same device class as the pointing devices exposed by VM hypervisors. The host then treats it as a real pointer: the cursor moves to the reported position and stays visible.
+
+The wire format is unchanged; only the descriptor's usages differ. In this mode the digitizer's in-range bit is declared as constant padding (hosts ignore it), and the tip and barrel switches are reported as mouse buttons 1 and 2, so `digitizer_tip_switch_on()` presses the left button at the current grid position.
+
+This requires `DIGITIZER_ABSOLUTE_POINTER` support in the QMK digitizer descriptor (`tmk_core/protocol/usb_descriptor.c`), which is not yet in upstream QMK.
+
 ## Keycodes
 
 | Key | Alias | Description |

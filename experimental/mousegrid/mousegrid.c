@@ -110,9 +110,14 @@ static mousegrid_cursor_t mg_cursor_step(mousegrid_cursor_t c, int8_t dx, int8_t
 }
 
 // Float conversion only happens here, at the point of digitizer output.
+// The digitizer is exposed as an absolute pointer (see config.h), so the
+// in-range bit is padding on the wire and does not need to be asserted.
+static void mg_output(uint16_t x, uint16_t y) {
+    digitizer_set_position((float)x / MOUSEGRID_RANGE, (float)y / MOUSEGRID_RANGE);
+}
+
 static void mg_send(void) {
-    digitizer_in_range_on();
-    digitizer_set_position((float)mg_cursor.x / MOUSEGRID_RANGE, (float)mg_cursor.y / MOUSEGRID_RANGE);
+    mg_output(mg_cursor.x, mg_cursor.y);
 }
 
 static void mg_push_undo(void) {
@@ -215,8 +220,7 @@ void housekeeping_task_mousegrid(void) {
 #endif
 
     mousegrid_cursor_t preview = mg_cursor_step(mg_cursor, dx, dy);
-    digitizer_in_range_on();
-    digitizer_set_position((float)preview.x / MOUSEGRID_RANGE, (float)preview.y / MOUSEGRID_RANGE);
+    mg_output(preview.x, preview.y);
 }
 
 bool process_record_mousegrid(uint16_t keycode, keyrecord_t *record) {
