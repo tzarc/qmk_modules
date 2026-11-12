@@ -5,10 +5,11 @@ generated-files: $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h
 
 $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h:
 	@$(MAKE) -C $(MODULE_PATH_RV32_RGB_RUNNER)/inferior
-	[ ! -f $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h ] || rm -f $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h
-	@cd $(MODULE_PATH_RV32_RGB_RUNNER)/inferior && \
-		xxd -i rv32_runner.bin $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h
-	sed -i 's@unsigned@static const unsigned@g' $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h
+	@{ echo 'static const unsigned char rv32_runner_bin[] = {'; \
+		od -An -v -tx1 $(MODULE_PATH_RV32_RGB_RUNNER)/inferior/rv32_runner.bin | sed -e 's@\([0-9a-f][0-9a-f]\)@0x\1,@g'; \
+		echo '};'; \
+		echo "static const unsigned int rv32_runner_bin_len = $$(wc -c <$(MODULE_PATH_RV32_RGB_RUNNER)/inferior/rv32_runner.bin | tr -d ' ');"; \
+	} >$@
 
 $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h: $(wildcard $(MODULE_PATH_RV32_RGB_RUNNER)/inferior/*.c)
 $(MODULE_PATH_RV32_RGB_RUNNER)/rv32_rgb_runner.inl.h: $(wildcard $(MODULE_PATH_RV32_RGB_RUNNER)/inferior/*.h)
